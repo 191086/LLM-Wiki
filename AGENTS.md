@@ -163,10 +163,10 @@ sources: N
 
 （初始为空。用户表达操作偏好时记录于此，例如「回答一律标注来源」「批量收录时不逐条确认」。）
 
-## Obsidian 设置建议（一次性）
+## Obsidian 设置（一次性）
 
-- Settings → Files & Links → Attachment folder path 设为 `raw/assets`。
-- 给命令「Download attachments for current file」绑快捷键，方便把网页图片本地化到 assets。
+- ✅ Attachment folder path 已设为 `raw/assets`（2026-09-12）。
+- 建议给命令「Download attachments for current file」绑快捷键，方便把网页图片本地化到 assets。
 - 推荐插件：Front Matter Title（中文标题）、Dataview（按 frontmatter 建动态目录）、Web Clipper。
 - 用图谱视图（Graph View）检查结构：孤立即缺上下文，密集团簇即核心主题。
 
