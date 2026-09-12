@@ -15,15 +15,18 @@ updated: 2026-09-12
 
 ## 来源（sources/）
 
-（暂无）
+- [[building-a-fast-bpe-tokenizer-from-scratch|Building a Fast BPE Tokenizer from Scratch]] — 五级递进优化把 BPE 训练加速 ~230×（Jun Yu Tan，2025-11，博文）
 
 ## 实体（entities/）
 
-（暂无）
+- [[jun-yu-tan|Jun Yu Tan]] — 博主（jytan.net），BPE 优化文作者，CS336 学员
+- [[stanford-cs336|Stanford CS336]] — 《Language Modeling from Scratch》课程
+- [[tinystories|TinyStories]] — 儿童故事数据集，常用基准语料
 
 ## 概念（concepts/）
 
-（暂无）
+- [[bpe-tokenization|BPE（字节对编码）]] — LLM 标准分词算法；训练复杂度与优化路径
+- [[pretokenization|预切分]] — BPE 前用正则切词块，防止跨词合并
 
 ## 分析（analyses/）
 
