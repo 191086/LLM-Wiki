@@ -1,0 +1,11 @@
+{
+  "editor:download-attachments": [
+    {
+      "modifiers": [
+        "Alt",
+        "Shift"
+      ],
+      "key": "D"
+    }
+  ]
+}

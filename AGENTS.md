@@ -1,4 +1,4 @@
-# AGENTS.md — LLM-Wiki 规范（Schema）
+# LLM-Wiki 规范（Schema）
 
 > 本文件是这个知识库的「规范层」：告诉 LLM 本 wiki 如何组织、遵守什么约定、执行哪些工作流。
 > 由用户和 LLM 在使用中共同演进——发现更好的做法就更新这里。
@@ -166,7 +166,7 @@ sources: N
 ## Obsidian 设置（一次性）
 
 - ✅ Attachment folder path 已设为 `raw/assets`（2026-09-12）。
-- 建议给命令「Download attachments for current file」绑快捷键，方便把网页图片本地化到 assets。
+- ✅ 已给「Download attachments for current file」绑定快捷键 `⌥ ⇧ D`（2026-09-12），用于把笔记中的远程图片本地化到 assets。
 - 推荐插件：Front Matter Title（中文标题）、Dataview（按 frontmatter 建动态目录）、Web Clipper。
 - 用图谱视图（Graph View）检查结构：孤立即缺上下文，密集团簇即核心主题。
 
