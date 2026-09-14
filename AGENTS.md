@@ -139,7 +139,7 @@ sources: N
 2. 综合回答，所有关键论断带 `[[sources/…]]` 引用。
 3. 回答若有沉淀价值（对比、分析、新发现），存为 `wiki/analyses/<slug>.md`，并更新 index 与 log。
 
-回答形式可按需变化：markdown 页、对比表格、Marp 幻灯、图表等。
+回答形式可按需变化：markdown 页、对比表格、Marp 幻灯片、图表等。
 
 ### Lint（体检，定期执行）
 
@@ -161,7 +161,8 @@ sources: N
 
 ## 用户偏好（随使用演进）
 
-（初始为空。用户表达操作偏好时记录于此，例如「回答一律标注来源」「批量收录时不逐条确认」。）
+- **数学公式**：内联公式用 `$…$`，行间公式用 `$$…$$`（2026-09-14）。
+- （用户表达操作偏好时记录于此，例如「回答一律标注来源」「批量收录时不逐条确认」。）
 
 ## Obsidian 设置（一次性）
 
@@ -172,5 +173,5 @@ sources: N
 
 ## 扩展（按需）
 
-- 规模变大、wiki 检索变慢时，可引入 [qmd](https://github.com/willccbb/qmd) 做本地 markdown 混合检索（BM25+向量）。
+- 规模变大、wiki 检索变慢时，可引入 [qmd](https://github.com/tobi/qmd)（Tobias Lütke）做本地 markdown 混合检索（BM25+向量，`qmd query` 还含 LLM 重排序）；自带 MCP 模式（`qmd mcp`），可直接接入 Claude Code 等 agent。
 - 需要演示时可用 Marp 把任意分析页转成幻灯片。
