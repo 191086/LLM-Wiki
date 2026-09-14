@@ -1,0 +1,92 @@
+---
+type: concept
+title: QUAD（质量感知数据清洗管线）
+created: 2026-09-14
+updated: 2026-09-14
+tags:
+  - data-curation
+  - mllm
+  - data-quality
+sources: 2
+---
+
+# QUAD（Quality-aware Unbiased Automated Data-curation）
+
+**定义**：[[ostrakon-vl]] 论文提出的多模态指令数据清洗管线，以「正确性、可学习性、非冗余、均衡」四要素为准则，四阶段把 69.25M 候选池蒸馏为 3.40M 高信号语料（压缩 20.4×），下游性能反升 2.5 分。
+
+## 详情
+
+### 四阶段流程（论文图 1 上半）
+
+1. **Quality Filtering（质量过滤）**：奖励模型 $R_\phi$（实现用 [[skywork-vl-reward|Skywork-VL-Reward]]，直接取用未做领域适配）给三元组 $(I, q, a)$ 打分 $r_a = R_\phi(I, q, a)$，按阈值 Top-p% 保留；附**视觉消融检验**——去掉图只给 q 让生成器重答 $\bar{a} = G_\theta(q)$，若原回答与「盲答」的奖励差距 $r_a - r_{\bar{a}}$ 小于阈值，说明答案靠语言先验而非视觉证据，剔除。联合保留准则（论文式 4）：
+
+   $$(I, q, a) \in D_1 \iff r_a \ge \tau \;\land\; (r_a - r_{\bar{a}}) \ge \tau_{\bar{a}}$$
+
+   > 注（非 Ostrakon 论文原话）：这个统一打分器自身的训练语料，同样是「surrogate RM 打分 → 按分修订重生成」的三阶段清洗产物（[[skywork-vl-reward-paper]] §3.2）——裁判与被清洗数据的方法论同源，且其风格偏好（惩罚冗长自校正）与域错配一样构成潜在偏置源（见 [[skywork-vl-reward]] 隐患两条）。
+
+2. **Foundation Model Referenced Filtering（基座参考过滤）**：让基座模型（[[ostrakon-vl]] 微调前的起点 [[qwen|Qwen3-VL-8B]] 本尊，非裸预训练模型）对每题生成参考回答 $\tilde{a}$ 并打分 $r_{\tilde{a}} = R_\phi(I, q, \tilde{a})$，若奖励差 $\Delta r = r_a - r_{\tilde{a}}$ 小于阈值 $\tau_{\tilde{a}}$（基座已经会了），该样本无学习增益，剔除——直接优化「可学习性」。保留准则（论文式 6）：
+
+   $$(I, q, a) \in D_2 \iff (I, q, a) \in D_1 \;\land\; \Delta r \ge \tau_{\tilde{a}}$$
+
+3. **Multimodal Semantic Deduplication（多模态语义去重）**：GME-Qwen2VL-2B 提取图文联合嵌入，SemDeDup 式 k-means 聚类 + 类内 k-center 选择，保语义覆盖删近重复
+4. **Capability Coverage Redistribution（能力覆盖重分布）**：能力分类器 $\mathcal{M}_{\mathcal{C}}$（微调自 Qwen3-8B，约 7,000 条种子标注）预测每题的功能类别 $c = \mathcal{M}_{\mathcal{C}}(q)$，再按目标先验分布 $\pi(c)$ 分层重采样，纠正多级过滤造成的能力偏斜
+
+### 去重阶段的机制注解（SemDeDup 与 k-center）
+
+论文一句话带过的「SemDeDup 式 k-means 聚类 + 类内 k-center 选择」，拆开是：
+
+- **SemDeDup**（Abbas et al., 2023, arXiv:2303.09540）：预训练模型给每条样本算语义嵌入 → k-means 聚成语义簇 → 类内按「到质心的距离」排序 → **离质心最近的 ε 比例被判为互相的「语义重复」**（词面不同、语义几乎同一条），只留距质心最近的一条作代表，其余剪掉；ε 球外全部保留。原文在 LAION 上剪 50% 性能几乎不掉
+- **k-center 选择**（最远点采样 / farthest-first traversal）：簇内贪心挑「与已选集合距离最远」的下一条，得到互相散开、最大化语义覆盖的代表子集——比 SemDeDup 原版的「留最典型的一条」更保多样性
+- **QUAD 的组合**：k-means 定簇 + 簇内 k-center 式挑代表；仅披露嵌入模型 GME-Qwen2VL-2B，簇数 / ε / 每簇 k 等超参均未披露
+- **分项结果**：VQA 池 8.10M→2.96M；MultiImg 删得最狠 4.05M→0.54M（7.5×，多图语料冗余最重），Video 分毫未动（0.08M，存量太少）；caption 池 6.73M→4.23M（表 7）
+
+### 能力分类器与 19 类能力分类学（论文式 7、图 6）
+
+- **微调**：$\mathcal{M}_{\mathcal{C}}$ 由 **[[qwen|Qwen3-8B]]（纯文本 LLM，非 VL 版）** 在约 7,000 条人工精标（crowdsourced）种子上微调而来；输入只有问题文本 $c = \mathcal{M}_{\mathcal{C}}(q)$，不看图。论文未给 SFT 超参，仅称「任何足够强的预训练 LLM 皆可充当」
+- **分类学来源**：综合成熟视觉基准与 MLLM 实际功能需求——图 6 展开共 **19 类**，是通用多模态能力体系而非 FSRS 专属（含名人识别 / 图像情绪 / 图像风格等域外类目）
+- **19 类占比（重分布前→后，%）**：属性识别 27.3→28.3、空间关系 16.1→6.1、目标定位 12.5→8.3、OCR 9.8→14.5、动作识别 7.3→1.5、功能推理 5.7→6.4、属性对比 4.9→2.5、图像场景 3.9→9.6、结构化图文理解 2.6→1.5、图像主题 2.1→5.9、未来预测 1.5→3.1、名人识别 1.4→3.0、图像情绪 1.3→1.5、物理关系 0.9→0.4、身份推理 0.8→1.7、图像风格 0.8→3.5、社会关系 0.6→0.7、图像质量 0.4→1.0、物理属性 0.2→0.5
+- **目标先验 $\pi(c)$**：按期望的场景均衡 + 初步模型在关键推理能力上的短板设定（附录 A.1.2：补欠表现能力）
+
+### 消融数据（VQA 指令语料，论文表 5）
+
+| 阶段 | 存量 | 压缩比 | ShopBench AVG |
+|---|---|---|---|
+| Raw Data | 69.25M | — | 56.7 |
+| + Quality Filtering | 16.40M | 4.2× | 58.2 |
+| + 基座参考过滤 | 8.10M | 8.6× | 58.9 |
+| + 语义去重 | 2.96M | 23.4× | 58.4（略降） |
+| + 能力重分布 | 3.40M | 20.4× | **59.2** |
+
+- 去重阶段单独看分数微降（-0.5）：冗余样本虽低效，但可能以「广覆盖」方式顺带增强了鲁棒性；换取训练效率与信息密度仍值得
+- 重分布阶段把开源模型没涨的分数拉回峰值：原始语料 Kitchen 占 71.1% → 34.3%，ShopFront 19.0% → 34.6%、ShopInterior 9.9% → 31.1%（论文图 5）；能力层面压制长头（空间关系 16.1%→6.1%）、抬升稀缺推理（未来预测 1.5%→3.1%）（论文图 6）
+
+![[ostrakon-vl-fig5-subset-redistribution.png]]
+> 能力覆盖重分布前（蓝）后（橙）的子数据集构成（论文图 5）。
+
+![[ostrakon-vl-fig6-capability-redistribution.png]]
+> 能力层面的分布矫正：压制高频长头（空间关系、目标定位），抬升稀缺推理能力（未来预测、身份推理）与基础 OCR（论文图 6）。
+
+### 与数据合成的关系（指令从何而来，§3.2）
+
+QUAD 的输入不是人工标注，而是**合成语料**：用强 MLLM 作生成器 $G_\theta$，以样题 / 描述性 caption 为语义锚，对原始视觉流批量生成指令-回答对（§3.2）。合成必然引入「机器噪声」（视觉幻觉、逻辑不一致），故必须走系统化清洗——论文由此强调管线要**可审计、可复现**（给定 $\{M_k\}$、$R_\phi$、阈值、$f$ 全部确定），反对朴素 MLLM-as-judge 一过滤了事。
+
+细节与边界（§1、§3.2、附录 A.1）：
+
+- **原始视觉流**来自真实 FSRS 场景：监管巡检、低分辨率监控摄像头、随手拍摄，视角 / 分辨率 / 环境差异大
+- **人的参与在「锚」和「阈值」，不在逐条标注**：样题与 caption 充当语义锚；过滤阈值 $\tau$、$\tau_{\bar{a}}$、$\tau_{\tilde{a}}$ 靠验证集表现 + 人工审计选定；能力分类器用约 7,000 条众包种子微调
+- **原始池构成（附录表 8）**：VQA 69.25M 中 Kitchen 占 40.00M（过半），ShopFront 12.55M / ShopInterior 6.50M / MultiImg 10.00M / Video 0.20M——重分布阶段要纠的偏斜在源头就已存在；caption 池 25.71M 全部为三个单图场景（ShopFront 18.51M / ShopInterior 6.00M / Kitchen 1.20M）
+- **盲答也出自同一生成器**：视觉消融检验里的 $\bar{a} = G_\theta(q)$，即「撤图重答」由 $G_\theta$ 自己完成
+- **论文未交代**：生成器 $G_\theta$ 具体是哪个模型、prompt 模板长什么样、样题从哪来——§3.2 仅半页篇幅，是全文最语焉不详的一环
+
+### Caption 语料的简化用法
+
+Caption Bootstrapping 阶段的描述语料只走其中两阶段（质量过滤 + 语义去重）：跳过基座参考过滤（描述文案的噪声主要是损坏 / 事实错误 / 模板化，而非「太简单」）、跳过重分布（caption 无 QA 结构，无法归入能力类别）。
+
+## 来源
+
+- [[ostrakon-vl-paper]]
+- [[skywork-vl-reward-paper]]（打分器自身的数据清洗，§3.2）
+
+## 相关
+
+- [[ostrakon-vl]] ｜ [[mixed-preference-optimization]] ｜ [[domain-specific-mllm]] ｜ [[reward-model]] ｜ [[skywork-vl-reward]]
