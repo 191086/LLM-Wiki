@@ -883,7 +883,7 @@ The lesson: lazy deletion needs periodic cleanup, or memory bloat kills cache pe
 
 To find the exact crossover point, we benchmark V4 and V5 at fine-grained vocabulary sizes (500, 750, 1000, 1250, 1500, 1750, 2000, 2500, 3000, 400, and 5000) across three corpus sizes (5 MB, 10 MB, 21 MB), interpolating their duration curves to find where they intersect.
 
-![](https://jytan.net/assets/img/posts/bpe/crossover_plot-1400.webp)
+![[crossover_plot-1400.webp]]
 
 - 5 MB corpus: ~1180 vocab size
 - 10 MB corpus: ~1565 vocab size
