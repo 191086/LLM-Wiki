@@ -2,15 +2,15 @@
 type: overview
 title: 总览
 created: 2026-09-12
-updated: 2026-09-14
-sources: 4
+updated: 2026-09-15
+sources: 5
 ---
 
 # 总览
 
 > 本页是全局综合页，反映「读过的所有来源叠加之后」的整体理解。每次 ingest 后更新。
 
-**当前状态**：已收录 4 份来源，两条主线：**LLM 分词（tokenization）**（算法与训练优化、工业实现）与 **多模态大模型的领域化**（数据管线、训练策略、奖励模型、领域评测，以 Ostrakon-VL 为首个样本），并沉淀了一份中文场景的实验分析。
+**当前状态**：已收录 5 份来源，两条主线：**LLM 分词（tokenization）**（算法与训练优化、工业实现）与 **多模态大模型的领域化与后训练**（数据管线、训练策略、奖励模型、免 RM 强化学习、领域评测，以 Ostrakon-VL 与 Vision-R1 为两个样本），并沉淀了一份中文场景的实验分析。
 
 ## 当前主线
 
@@ -27,6 +27,7 @@ sources: 4
 - **训练方法论**：caption 注入领域知识 → 课程学习排序 → [[mixed-preference-optimization|MPO]] 偏好对齐的三段递进；组合效应大于单项（CB+OCL 贡献最大）
 - **评测方法论**：[[shopbench|ShopBench]] 用 VNR/VIF 分解 Multimodal Gain，度量基准「真依赖视觉」的程度；领域基准应与现有基准分布独立、抗语言先验泄漏
 - **奖励模型环节**：[[skywork-vl-reward]]（判别式 ORM，[[reward-model]]）作 QUAD 统一裁判；其训练语料本身也是「surrogate RM 打分回路」清洗的产物（[[skywork-vl-reward-paper]]），且偏好数据质量直接决定 MPO 上限（MathVista 同配方换 RM：71.2 / 71.8 / 73.5）
+- **后训练强化学习（免 RM 路线，2026-09-15 新增）**：[[vision-r1]] 用规则奖励（格式 + 召回 + 精度三路程序化信号）+ 渐进收紧做 [[grpo|GRPO]]，绕开偏好数据与奖励模型，49K 样本就把 Qwen2.5-VL-7B 的定位 mAP 提 ≈50%——与学习式 RM（[[skywork-vl-reward]]）、偏好对齐（MPO）、RM 清洗（QUAD）构成「评价信号从哪来」的路线对照（[[vision-r1-paper]]）
 
 ## 关键结论
 
@@ -42,6 +43,10 @@ sources: 4
 - **奖励模型的排序损失只学相对序**：绝对分值未经校准，只能差值 / 阈值使用，且「等质」偏好对须在训练前剔除（[[reward-model]]）
 - **偏好数据质量决定 MPO 上限**：同配方只换数据来源 RM，MathVista 69.2→71.2 / 71.8 / 73.5（[[mixed-preference-optimization]]）
 - reward-guided curation 贯穿两层：Skywork 用 surrogate RM 回路清洗 RM 自己的语料，Ostrakon 再拿成品 RM 清洗领域语料——「裁判有偏 → 数据有偏 → 下游清洗有偏」的传导链已现雏形
+- **免 RM 的规则 RL 路线成立**：三路程序化奖励（格式 / 召回 / 精度，各自对应 LVLM 定位的一种典型失败）+ [[grpo|GRPO]]，49K 数据 / 1 epoch 让 Qwen2.5-VL-7B 定位 mAP +50%、ODINW-13 反超 10× 大的 72B（[[vision-r1-paper]]）
+- **RL 后训练比 SFT 抗过拟合**：同 49K 数据，SFT 把 Qwen 的 ODINW-13 拉低（37.0→35.0）、通用 QA 掉分（GQA 58.8→53.5）；规则 RL 两头不掉甚至涨（GQA 61.0）——完成级奖励只惩罚结果，不像 token 级 SFT 监督那样硬扭全部分布（[[vision-r1-paper]] §4.2–4.3）
+- **组内奖励趋同是定位任务 GRPO 的特有陷阱**：高 IoU 拿不满 → 组内差距塌缩 → 优势信号消失；解法是渐进收紧（低值清零 / 高值给满 + 阈值随训练上调），且切换时机须匹配模型能力（强模型中途收紧、弱模型不切）（[[rule-based-reward]]）
+- **评价信号的谱系成形**：人工偏好数据 → 学习式 RM（[[reward-model]]，绝对分不可辨识）→ 规则奖励（可审计、有绝对意义，但仅限可验证任务）；两路线在 MPO 里汇合——规则信号当偏好对过滤器（[[mixed-preference-optimization]]）
 
 ## 未解决的疑问
 
@@ -50,8 +55,9 @@ sources: 4
 - SentencePiece（码点级 + byte fallback）与 byte-level BPE 的取舍——[[qwen-tokenization-note]] 仅一笔带过
 - `<|im_start|>` / `<|im_end|>` 背后的 ChatML 模板在训练与推理时如何注入
 - Ostrakon-VL / ShopBench 承诺开源但尚未放出：VNR/VIF 会不会被社区采纳为基准设计惯例？MultiImg（49.6）短板是数据不足还是方法缺陷？
-- MPO vs GRPO 的效率-效果权衡只有论文单方说法（来自 MPO 阵营），缺独立对照
+- MPO vs GRPO 已有阵营对照（[[vision-r1]]：GRPO + 规则奖励在 49K 样本上大幅提升定位），但仍缺同任务同数据的头对头；GRPO 在线组采样在 LVLM 上的实际成本（时间 / 显存）也未量化——两篇论文各说各的效率故事
 - Skywork-VL-Reward 的风格偏置（惩罚冗长自校正、偏好简短回答）对 QUAD 过滤与 OCL 分层的实际影响未量化——Ostrakon 论文未讨论，需要实验才能闭合（[[skywork-vl-reward]]）
+- Vision-R1 只做定位类任务；规则奖励路线能否延展到需要中间推理的多模态任务（数学 VQA、OCR 推理）？论文未触及，R1 系后续工作待收录验证
 
 ## 相关来源
 
@@ -59,3 +65,4 @@ sources: 4
 - [[qwen-tokenization-note]]
 - [[ostrakon-vl-paper]]
 - [[skywork-vl-reward-paper]]
+- [[vision-r1-paper]]
