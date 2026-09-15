@@ -2,7 +2,7 @@
 type: entity
 title: ShopBench（基准）
 created: 2026-09-14
-updated: 2026-09-14
+updated: 2026-09-15
 tags:
   - benchmark
   - mllm
@@ -29,7 +29,7 @@ sources: 1
 
 ### 与现有基准的区隔
 
-- **域分布独立**：GME-Qwen2VL-2B 嵌入 + t-SNE 显示 ShopBench 与 MMBench / MMStar / MMVet / HallusionBench / AI2D / OCRBench / MathVista / MMMU 八个主流基准几乎不重叠（论文图 4）
+- **域分布独立**：GME-Qwen2VL-2B 嵌入 + t-SNE（wiki 外 gloss：把高维嵌入压到二维平面、尽量保住局部邻接关系的可视化降维方法——远邻距离不可信，「成独立簇」的判读只依赖局部不混叠）显示 ShopBench 与 MMBench / MMStar / MMVet / HallusionBench / AI2D / OCRBench / MathVista / MMMU 八个主流基准几乎不重叠（论文图 4）
 - **场景最复杂**：平均每图实例数（InsPerImg）**13.0**，八个基准中最高（第二名 MMBench-EN 10.6、MMStar 9.3）——拥挤货架、SKU 多样、人-物交互密集
 - **抗泄漏**：平均 Multimodal Leakage 0.02，八个基准中最低（论文表 2）
 

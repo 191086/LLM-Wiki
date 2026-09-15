@@ -2,7 +2,7 @@
 type: entity
 title: Skywork-VL-Reward（奖励模型）
 created: 2026-09-14
-updated: 2026-09-14
+updated: 2026-09-15
 tags:
   - reward-model
   - mllm
@@ -13,6 +13,8 @@ sources: 2
 # Skywork-VL-Reward
 
 **定义**：昆仑万维 Skywork 团队 2025 年 5 月发布的开源多模态奖励模型（7B，Qwen2.5-VL-7B-Instruct 基座 + 奖励头），发布时 VL-RewardBench 榜首；在 [[ostrakon-vl]] 论文中被**原样取用**为 [[quad-data-curation|QUAD]] 管线与课程学习的统一打分器 $R_\phi$，未做任何领域适配。
+
+> VL-RewardBench（wiki 外补注，候选来源：Li et al. 2024，arXiv:2411.17451，CVPR 2025）：视觉-语言奖励模型的综合评测基准，1,250 条人工核验样本，分 general（一般多模态）/ 幻觉检测 / reasoning（复杂推理）三个类目——本页「成绩」一节的三分类即按此划分。
 
 ## 详情
 

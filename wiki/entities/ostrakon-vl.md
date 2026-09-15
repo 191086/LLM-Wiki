@@ -2,7 +2,7 @@
 type: entity
 title: Ostrakon-VL（模型）
 created: 2026-09-14
-updated: 2026-09-14
+updated: 2026-09-15
 tags:
   - mllm
   - domain-model
@@ -12,7 +12,7 @@ sources: 1
 
 # Ostrakon-VL
 
-**定义**：淘宝闪购（Rajax Network Technology，阿里）发布的餐饮零售领域（FSRS）多模态大模型，基于 [[qwen|Qwen3-VL-8B]] 全参微调，是其论文三件套（模型 / [[shopbench|ShopBench]] 基准 / [[quad-data-curation|QUAD]] 数据管线）中的模型部分。
+**定义**：淘宝闪购（Rajax Network Technology，阿里）发布的餐饮零售领域（FSRS，Food-Service and Retail Stores——论文标题即此缩写的展开）多模态大模型，基于 [[qwen|Qwen3-VL-8B]] 全参微调，是其论文三件套（模型 / [[shopbench|ShopBench]] 基准 / [[quad-data-curation|QUAD]] 数据管线）中的模型部分。
 
 ## 详情
 
@@ -30,6 +30,8 @@ sources: 1
 - 开源阵营第二（仅次于 InternVL3.5-241B）；闭源参考（不计名次）：Seed 1.8 69.0、Gemini3-Pro 63.6、GPT-5 58.8
 - 单项：ShopFront 65.0 为所有参与排名的开源模型最高，Kitchen 59.1 第二
 - 弱项：MultiImg 49.6 明显低于 GLM-4.6V-FlashX（56.5）/ InternVL3.5-241B（59.7），多图一致性是短板
+
+> 架构列 gloss（wiki 外）：Dense＝稠密架构，全部参数每次前向都激活；MoE（Mixture of Experts，专家混合）＝稀疏架构，每次只路由激活部分专家参数——同等推理显存下可堆更大的总参数量。表中两个 200B+ 模型均为 MoE，Ostrakon-VL 以 8B Dense 与之竞争。
 
 ### 训练策略（三段递进）
 
