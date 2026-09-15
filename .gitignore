@@ -4,3 +4,4 @@ __pycache__/
 .obsidian/workspace-mobile.json
 .obsidian/plugins/*/main.js
 .trash/
+.zcode/
