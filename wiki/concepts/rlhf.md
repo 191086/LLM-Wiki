@@ -12,7 +12,7 @@ sources: 3
 
 # RLHF（Reinforcement Learning from Human Feedback，基于人类反馈的强化学习）
 
-**定义**：用人类偏好反馈训练语言模型使其行为对齐用户意图的范式——先以监督微调（SFT，Supervised Fine-Tuning，在人类示范上做标准的下一词元交叉熵）热身，再从人类偏好排序训练奖励模型（RM，Reward Model），最后用强化学习（实践中是 PPO，Proximal Policy Optimization，近端策略优化）最大化奖励、同时以 KL 惩罚约束策略不偏离 SFT 起点；InstructGPT 以「1.3B 对齐模型胜过 175B 未对齐 GPT-3」把它从窄任务实验变成对话 LM 对齐的主流框架（[[instructgpt-paper]] §3.1、§4.1）。
+**定义**：用人类偏好反馈训练语言模型使其行为对齐用户意图的范式——先以监督微调（SFT，Supervised Fine-Tuning，在人类示范上做标准的下一词元交叉熵）热身，再从人类偏好排序训练奖励模型（RM，Reward Model），最后用强化学习（实践中是 [[ppo|PPO]]，Proximal Policy Optimization，近端策略优化，机制见 [[ppo]] §2–3）最大化奖励、同时以 KL 惩罚约束策略不偏离 SFT 起点；InstructGPT 以「1.3B 对齐模型胜过 175B 未对齐 GPT-3」把它从窄任务实验变成对话 LM 对齐的主流框架（[[instructgpt-paper]] §3.1、§4.1）。
 
 ## 1. 要解决什么问题
 
@@ -32,7 +32,7 @@ $$\mathrm{loss}(\theta) = -\frac{1}{\binom{K}{2}}\,\mathbb{E}_{(x,y_w,y_l)\sim\m
 
 三个工程细节：只用 **6B RM**（175B RM 训练不稳定，不宜作 PPO 值函数初始化，且算力贵，附录 C.2）；同一 prompt 的全部 $\binom{K}{2}$ 对打包为**单个 batch 元素**（各对高度相关，拆成独立样本则单 epoch 即过拟合，还把每回答的前向次数从 $\binom{K}{2}$ 降到 1）；训练前用 bias 把示范数据均分归 0——损失平移不变、绝对分不可辨识，必须人为定锚（[[instructgpt-paper]] §3.5；平移不变性见 [[reward-model]] §4.3）。
 
-3. **RL 微调**：bandit 环境（一句 prompt 采一条回答即终局结算，无多步状态），PPO 最大化 RM 打分；同时每个 token 加对 $\pi^{SFT}$ 的 KL 惩罚（β=0.02），缓解对 RM 的过度优化（reward hacking，[[rule-based-reward]] §4）；值函数从 RM 初始化（[[instructgpt-paper]] §3.5、C.4）。**PPO-ptx** 变体在目标里再混入预训练数据的对数似然梯度（系数 γ=27.8、预训练样本量 8× 于 RL episodes，附录 C.4），用于缴「对齐税」（见 §3.3；式 2 原文见 [[instructgpt-paper]] §3.5）。
+3. **RL 微调**：bandit 环境（一句 prompt 采一条回答即终局结算，无多步状态），[[ppo|PPO]] 最大化 RM 打分；同时每个 token 加对 $\pi^{SFT}$ 的 KL 惩罚（β=0.02），缓解对 RM 的过度优化（reward hacking，[[rule-based-reward]] §4）；值函数从 RM 初始化（[[instructgpt-paper]] §3.5、C.4）。**PPO-ptx** 变体在目标里再混入预训练数据的对数似然梯度（系数 γ=27.8、预训练样本量 8× 于 RL episodes，附录 C.4），用于缴「对齐税」（见 §3.3；式 2 原文见 [[instructgpt-paper]] §3.5）。
 
 阶段 3 解的形式化目标即 KL 约束的奖励最大化（[[dpo-paper]] 式 3）：
 
@@ -48,7 +48,7 @@ $$\max_{\pi_\theta}\ \mathbb{E}_{x \sim \mathcal{D},\, y \sim \pi_\theta(y|x)} \
 - 注意 $y_A$：策略把它的概率**调低**了（0.8→0.5），形化奖励反而**加**了 0.047——逐样本看惩罚方向是反的
 - 但取期望：$\mathbb{E}_{y\sim\pi_\theta}[r] = 0.5 \times 1.047 + 0.5 \times 0.808 = 0.928$，而 $\mathbb{E}[r_\phi] - \beta\,\mathrm{KL}(\pi_\theta\,\|\,\pi_\text{ref}) = 0.95 - 0.1 \times 0.223 = 0.928$——**严格相等**
 
-即形化奖励在 $\pi_\theta$ 采样下恰好把约束目标变成无约束最大化；KL 惩罚只在期望层面成立，逐样本不可读。两个推论：①必须**在线**从 $\pi_\theta$ 采样才能评估这个目标——这正是 DPO（离线、不采样）要折叠掉的环节，也是 [[grpo]] 在线组采样成本的结构来源；②逐样本奖励信号噪声大、方差高，PPO 要再学一个值函数当 baseline 才能训稳（InstructGPT 直接从 RM 初始化值函数，[[instructgpt-paper]] §3.5；不稳性的结构诊断见 [[dpo-paper]] §5.2）。
+即形化奖励在 $\pi_\theta$ 采样下恰好把约束目标变成无约束最大化；KL 惩罚只在期望层面成立，逐样本不可读。两个推论：①必须**在线**从 $\pi_\theta$ 采样才能评估这个目标——这正是 DPO（离线、不采样）要折叠掉的环节，也是 [[grpo]] 在线组采样成本的结构来源；②逐样本奖励信号噪声大、方差高，[[ppo|PPO]] 要再学一个值函数当 baseline 才能训稳（InstructGPT 直接从 RM 初始化值函数，[[instructgpt-paper]] §3.5；不稳性的结构诊断见 [[dpo-paper]] §5.2）。
 
 ## 3. 实证：对齐有效且便宜（[[instructgpt-paper]] §4–5）
 
@@ -75,7 +75,7 @@ $$\max_{\pi_\theta}\ \mathbb{E}_{x \sim \mathcal{D},\, y \sim \pi_\theta(y|x)} \
 
 ## 4. 为什么难训
 
-- **要养多个 LM**：SFT、RM、策略、（PPO 的）值函数——InstructGPT 里是三档策略 + 6B RM + 6B 值函数多套参数（[[instructgpt-paper]] §3.5）
+- **要养多个 LM**：SFT、RM、策略、（[[ppo|PPO]] 的）值函数——InstructGPT 里是三档策略 + 6B RM + 6B 值函数多套参数（[[instructgpt-paper]] §3.5）
 - **训练回路里在线采样**：每步都要从策略生成回答、过 RM 打分（bandit 回路）
 - **值函数/baseline 难学**：KL 约束最优解里有归一化项（$\pi_\text{ref}$ 的软值函数，配分函数 $\log Z(x)$），学它难、单样本估计方差高——PPO 不稳的结构原因（[[dpo-paper]] §5.2；DPO 的重参数化让该项彻底消失，见 [[dpo]] §2）；实例：InstructGPT 发现 175B RM 训练不稳定，值函数只能从 6B RM 初始化（附录 C.2）
 - **RM 可被利用**：策略会找 RM 的漏洞而不是真好（reward hacking，[[rule-based-reward]] §4）——绝对分经 BT 训练本就不可辨识，只能差值使用（[[reward-model]] §4.3）；逐 token KL 惩罚（β=0.02）就是对此的第一道闸（[[instructgpt-paper]] §3.5）
@@ -84,7 +84,7 @@ $$\max_{\pi_\theta}\ \mathbb{E}_{x \sim \mathcal{D},\, y \sim \pi_\theta(y|x)} \
 
 | 路线 | 页面 | 对管线的改造 | 采样时机 |
 | --- | --- | --- | --- |
-| 显式 RM + PPO（经典 RLHF） | 本页 | 原样三阶段（[[instructgpt-paper]]） | 在线（训练回路） |
+| 显式 RM + [[ppo|PPO]]（经典 RLHF） | 本页 + [[ppo]] | 原样三阶段（[[instructgpt-paper]]） | 在线（训练回路） |
 | DPO | [[dpo]] | 重参数化折叠 2+3 阶段为一个损失 | 离线（无采样） |
 | MPO | [[mixed-preference-optimization]] | DPO 偏好项 + BCO 质量项 + SFT 生成项 | 离线（偏好对预先备好） |
 | 规则奖励 + GRPO | [[rule-based-reward]] + [[grpo]] | 免 RM：程序化规则直接打分；免 critic：组内相对优势 | 在线（每组采 N 个） |
@@ -93,10 +93,12 @@ $$\max_{\pi_\theta}\ \mathbb{E}_{x \sim \mathcal{D},\, y \sim \pi_\theta(y|x)} \
 
 ## 6. 在本 wiki 的语境
 
+- [[ppo]]：第 3 阶段 RL 引擎的机制页——clip 替代目标四分支走查、截断 GAE、完整算法与消融实验（本页 §2「PPO 最大化 RM 打分」的展开）
 - [[instructgpt]]：范式定标的模型实例（三档规模、配方速览）；本页主锚来源即其论文
 - [[dpo]]：本文 §2 管线的折叠（[[dpo-paper]]）；[[reward-model]]：第 2 阶段的产物，两轴分类法与 BT 损失
 - [[mixed-preference-optimization]] / [[grpo]] / [[rule-based-reward]]：谱系各分支的机制与实战
 - [[vision-r1-paper]] §2.2：偏好标注 + RM 路线的成本批判（为什么视觉定位任务可以整体绕开）
+- [[trpo]]：PPO 的置信域前身——带单调改进下界（Theorem 1）的 KL 约束更新，PPO 把它一阶化为 clip 目标（对照见 [[trpo]] §8）；RLHF 引擎谱系 TRPO → PPO → PPO-ptx 的理论起点
 
 ## 来源
 
@@ -106,4 +108,4 @@ $$\max_{\pi_\theta}\ \mathbb{E}_{x \sim \mathcal{D},\, y \sim \pi_\theta(y|x)} \
 
 ## 相关
 
-- [[instructgpt]] ｜ [[dpo]] ｜ [[reward-model]] ｜ [[grpo]] ｜ [[mixed-preference-optimization]] ｜ [[rule-based-reward]]
+- [[ppo]] ｜ [[instructgpt]] ｜ [[dpo]] ｜ [[reward-model]] ｜ [[grpo]] ｜ [[mixed-preference-optimization]] ｜ [[rule-based-reward]]
