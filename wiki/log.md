@@ -2,7 +2,7 @@
 type: log
 title: 日志
 created: 2026-09-12
-updated: 2026-09-15
+updated: 2026-09-16
 ---
 
 # 日志
@@ -206,3 +206,39 @@ updated: 2026-09-15
 - 重写 [[rlhf]] 概念页：主锚从 [[dpo-paper]] 二手引文升级为 [[instructgpt-paper]] 一手来源——定义行重写、§1 补 misaligned/3H 框架、§2 管线补 InstructGPT 工程细节（RM 分选模、6B RM 选型、式 1 与打包训练、逐 token KL、PPO-ptx）、新增 §3 实证节（小模型赢大模型、held-out 标注员泛化、真实性/毒性/偏见、对齐税、成本账、泛化边界）；形化奖励走查原样保留（0.928 期望恒等本机复核一致）并补值函数初始化锚点；难训四因补 175B RM 不稳定实例；路线谱系表与各节编号保持（dpo.md 的 [[rlhf]] §2 入链不断）；来源 2→3；嵌管线图与 held-out 胜率图
 - 更新 [[reward-model]]：§4.1 补 InstructGPT 式 1 锚定 + 整提示打包 + bias 归一化（平移不变的规范化应用，§4.3 推论 1 同步补引）；§5 补 RM 精度参照（72.4% / 69.6% vs 人-人 72.6%，上限被人类一致性封顶）；来源 4→5
 - 登记：overview（来源 6→7、主线二 +「RLHF 范式的一手锚点」、关键结论 +3、开放问题 +1）；index（新来源/实体行、rlhf 摘要刷新）；图 3 张按需入 raw/assets（instructgpt-rlhf-pipeline、instructgpt-winrate-vs-gpt3、instructgpt-winrate-heldout）
+
+## [2026-09-16] ingest | Proximal Policy Optimization Algorithms（PPO 论文，arXiv:1707.06347v2）
+
+- raw/ 收录论文 PDF（12 页，arXiv v2，2017-08-28），入库前按惯例改短名 ppo.pdf；docling 全文转换（公式未解码），式 1–12 与 Algorithm 1 全部经 PDF 原页渲染视觉核验；考订出原文式 10/11 末项指数排印笔误（$T-t+1$ 应为 $T-1-t$；令 λ=1 展开求和与式 10 递缩相消严格一致以验证），wiki 按修正后的标准式照录并显式标注
+- 新建 [[ppo-paper]] 来源页：§1 三前驱动机、§3 截断替代目标（式 6–7）、§4 自适应 KL（式 8 与 β 乘性规则）、§5 完整算法与截断 GAE（式 9–12）、§6 消融（Table 1：clip ε=0.2 拿 0.82 vs 无约束 −0.39）/ MuJoCo 对比 / Atari（Table 2：30/18/1）；嵌 Figure 2
+- 新建 [[ppo]] 概念页（对照自查清单逐条过）：clip 四分支手工走查（Â>0 / Â<0 × 越界变好 / 变差，数值代入）、$L^{PG} \to L^{CPI} \to L^{CLIP}$ 演进、式 9 组合目标与截断 GAE（含笔误注记与验证）、Algorithm 1 伪代码、自适应 KL 变体、实验证据、§6「clip 不直接约束参数距离」wiki 外补注（候选来源：Engstrom 2020、Huang 2022）；嵌 Figure 1
+- 更新关联页：[[rlhf]]（定义行 / §2 / §4 / 谱系表 PPO 接线，§6 语境补条）、[[grpo]]（§1 critic 对照接线、clip 注记接 [[ppo]] §2）、[[dpo]]（§1 PPO 不稳表述补精确锚点）、[[instructgpt]]（配方表）、[[instructgpt-paper]] / [[dpo-paper]]（首提处接线）
+- 登记：overview（来源 7→8、主线二 +「RL 引擎本尊」、关键结论 +2、开放问题 +1）；index（新来源 / 概念行）；图 2 张按需入 raw/assets（ppo-fig1-clip-surrogate-single-term、ppo-fig2-interpolation-lower-bound）
+
+## [2026-09-16] ingest | Trust Region Policy Optimization（TRPO 论文，arXiv:1502.05477v5）
+
+- raw/ 收录论文 PDF（16 页，arXiv v5，2017-04-20，ICML 2015，UC Berkeley），视觉直读全文（16 页 3× 渲染通读 + 公式区局部放大）；Table 1 数字整页通读曾误读（TRPO 行多个数字），6–10× 局部放大后以与 DQN/Human 公开值交叉印证的读数为准，wiki 侧全部按放大版转录；考订原文一处自不一致：§8.1 称 Walker 状态维数 18、附录 E Table 2 印 20（已在来源页注记）
+- 新建 [[trpo-paper]] 来源页：§1 三族动机、§2 性能差分解（式 1–4）、§3 单调改进下界（Theorem 1 式 8–9、Algorithm 1 MM 视角）、§4 惩罚→硬约束（式 11–12）、§5 single path / vine 采样（式 13–16）、§6+附录 C 实用算法（Fisher-vector product、CG k=10、10% 子采样、回溯线搜索）、§7 自然梯度统一（式 17–18）、§8 MuJoCo（Table 2）与 Atari（Table 1 转录、Table 3）；嵌 Figure 5
+- 新建 [[trpo]] 概念页（对照自查清单逐条过）：理论骨架三节（性能差分解 → CPI/Theorem 1 → MM）、α-coupling 微走查（π=(0.8,0.2)/π̃=(0.7,0.3)、共享随机数分歧概率 0.1、Ā=0.125=α·(A₁−A₀) 两路一致、Lemma 2 验证；优势 π 下零均值前提显式演示）、三次近似、2 状态 MDP 数值走查（式 1 分解 0.314459 严格相等、替代目标高估 0.0372、下界松弛 ~13 vs 实际误差、理论惩罚系数 γ=0.99 达 39,600 → 硬约束的数字理由；全部本机复算）、single path vs vine 对照表、MuJoCo/Atari 实验证据（Table 1 六行转录）、TRPO/PPO 六行对照表；嵌 Figure 1、Figure 4
+- 更新关联页：[[ppo]]（§1 TRPO 接线、§7 补「TRPO 直接后继」条、相关行）、[[ppo-paper]]（一句话总结与要点 TRPO 接线、值得追踪补行）、[[rlhf]]（§6 补引擎谱系条）
+- 登记：overview（来源 8→9、当前状态改四重锚定、主线二 +「RL 引擎的理论前身」、关键结论 +1、开放问题 +1、相关来源 +1）；index（新来源 / 概念行）；图 3 张按需入 raw/assets（trpo-fig1-single-path-vs-vine、trpo-fig4-mujoco-learning-curves、trpo-fig5-atari-learning-curves）
+
+## [2026-09-16] query | TRPO 式 1（性能差分解）答疑
+
+- 用户反馈 [[trpo]] §2.1 式 1 不可懂；答疑拆解三层：①轨迹测度（$\tau\sim\tilde\pi$）与评分标准（$A_\pi$）的分工——新策略走路、旧策略打分；②严格等式的来源 = telescoping：$A$ 拆成 $r+\gamma V_\pi(s')-V_\pi(s)$ 后相邻 $V$ 项同测度平移相消（附录 A 式 20–24）；③一般骨架——$V$ 换任意 $\bar V$ 仍收敛到 $\eta(\text{行为策略}) - \mathbb{E}[\bar V(s_0)]$（势函数塑形同族），并给退化情形对照（评分与轨迹同策略 → 总和 0）与一步改进特例（→ 一步策略改进定理，CPI 的 $O(\alpha^2)$ 由此起）
+- 澄清块并入 [[trpo]] §2.1（式 1 之后、式 3 之前）；小体量分析点就近并入、不另开 analyses 页
+
+## [2026-09-16] ingest | RoFormer: Enhanced Transformer with Rotary Position Embedding（RoPE 论文，arXiv:2104.09864v5）
+
+- raw/ 收录 RoPE.pdf（14 页，arXiv v5，2023-11-08，追一科技，Su Jianlin 一作）；视觉直读全文（14 页渲染通读 + 5 张表与式 15 / 式 34 高倍局部放大转录核验）；docling 导出 3 图，按需全取入 raw/assets
+- 考订四处：式 32 第一行印作 $\boldsymbol{W}_q\boldsymbol{x}_n$，下标应为 $\boldsymbol{x}_m$（与式 1 矛盾）；$\theta_i$ 定义两处指标平移（式 15 的 $10000^{-2(i-1)/d}$ vs §3.3/§3.4.3 的 $10000^{-2i/d}$，等价）；Table 2 题注 "GLEU" 误排；§4.5.4 「净胜 WoBERT 1.5%」与 Table 5 算术不符（对 WoBERT 实为 +1.69，1.5 恰为自身 512→1024 增益 68.29→69.79）
+- 新建 [[rope-paper]] 来源页：§2 两族综述（式 1–10）、§3.1 函数方程（式 11）、§3.2 旋转解（式 12–16）、§3.3 性质与线性注意力（式 17–19）、§3.4 理论（推导式 20–33 / 稀疏实现式 34 / Abel 衰减界式 35–37）、§4 五组实验（Table 1–5、Figure 3）、§4.5.5 局限自陈；嵌 Figure 3
+- 新建 [[rope]] 概念页（对照自查清单逐条过）：§1–§8 编号分节；双手工走查本机 numpy 复算（2D：$\boldsymbol{q}^\top\boldsymbol{R}_3\boldsymbol{k} = (1,2)\cdot(-1,3) = 5$ 严格相等、平移不变 $(2,5)$ 仍 5.0、保范 $\sqrt5$；$d=4$：$(5,12)$ 与 $(100,107)$ 同差 7 内积逐位相等 $4.4047918119$）；术语首现 gloss；§7 后续谱系标注 wiki 外 + 候选来源（LLaMA / PI / YaRN / LongRoPE）；§8 七方案对照表；嵌 Figure 1、2
+- 定位：库内首个架构层页面，overview 开主线三「Transformer 架构与长上下文」；无既有页面需接线（全库此前无 transformer / 注意力类内容，grep 核实）
+- 登记：overview（来源 9→10、当前状态改三条主线、主线三小节、关键结论 +1、开放疑问 +2、相关来源 +1）；index（总览行刷新、新来源 / 概念行）；图 3 张按需入 raw/assets（rope-fig1-implementation、rope-fig2-long-term-decay、rope-fig3-pretraining-loss）
+
+## [2026-09-16] lint | 删除手工走查硬性要求（用户指示）：规范修订与 rope 页瘦身
+
+- 规范层四处去「走查」：AGENTS.md 写页自查清单删「至少一个手工走查」条（原第 3 条，余条重排为 5 条）；lint 扫库项「揪出无走查」改「揪出无实例」；写作原则实例枚举去「走查」、「概念页从严」句去「手工走查为硬性要求」；templates/concept.md 机制详解示例改「数值示例」——走查降为可选手段，不再是记 log 的门槛
+- [[rope]] 删 §4 手工走查整节，后续章节重排（关键性质 §4 / 实验 §5 / 局限与后续 §6 / 方案对照 §7），页内交叉引用同步；走查验证数字（2D 内积 5.0、$d=4$ 平移不变 4.4047918119）留档于上方 ingest 条目
+- 摘要去「双走查」表述并改节号：[[overview]]（主线三、关键结论）、[[index]]（rope 行）、[[rope-paper]]（值得追踪行）

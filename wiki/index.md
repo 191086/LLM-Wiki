@@ -11,7 +11,7 @@ updated: 2026-09-16
 
 ## 总览
 
-- [[overview]] — 对整个知识域的当前综合理解（两条主线：分词 / 多模态领域化）
+- [[overview]] — 对整个知识域的当前综合理解（三条主线：分词 / 多模态领域化 / 架构与长上下文）
 
 ## 来源（sources/）
 
@@ -22,6 +22,9 @@ updated: 2026-09-16
 - [[vision-r1-paper|Vision-R1（论文）]] — 免 RM 的视觉规则强化学习：三路准则奖励 + 渐进收紧 + GRPO，Qwen2.5-VL-7B 定位 mAP +50%、ODINW-13 反超 72B（CASIA，2025-03，arXiv）
 - [[dpo-paper|DPO（论文）]] — RLHF 两阶段折叠为单个偏好损失：奖励 = β·log(π/π_ref) 重参数化（闭式解 + 配分函数相消），reward-KL 前沿严格支配 PPO、TL;DR 胜率 61% vs 57%（Stanford，2023-05，arXiv:2305.18290 / NeurIPS 2023）
 - [[instructgpt-paper|InstructGPT（论文）]] — RLHF 三阶段定标之作：SFT → 6B RM → PPO-ptx 对齐 GPT-3，1.3B 胜 175B GPT-3（175B vs 175B 胜率 85±3%）、闭域幻觉减半、PPO-ptx 缴对齐税；对齐算力 ≈ 预训练 2%（OpenAI，2022-03，arXiv:2203.02155v1）
+- [[ppo-paper|PPO（论文）]] — 一阶化置信域：截断概率比的悲观下界替代目标 + 多 epoch 复用采样；clip 消融 0.82 vs 无约束 −0.39，Atari 30 胜 / ACER 18 / A2C 1（OpenAI，2017-08，arXiv:1707.06347v2）
+- [[trpo-paper|TRPO（论文）]] — 置信域策略优化：替代目标 − KL 约束更新的单调改进下界（Theorem 1），自然梯度 / 策略迭代统一为特例；MuJoCo 四任务包揽前二、Atari 原始图像七局（Berkeley，ICML 2015，arXiv:1502.05477v5）
+- [[rope-paper|RoFormer（论文）]] — 旋转位置编码：把「内积只依赖相对位置差」解成均匀角速度旋转（式 11–16 函数方程），零参数、保范数、长程衰减、线性注意力兼容；WMT14 27.3→27.5、GLUE 三胜三负（QQP +15.2）、CAIL2019-SCM 1024 长文 66.07%（追一科技，2021-04 首版 / v5 2023-11，arXiv:2104.09864）
 
 ## 实体（entities/）
 
@@ -44,12 +47,15 @@ updated: 2026-09-16
 - [[vocabulary-expansion|词表扩展]] — 训后追加 token：add_merges 端到端走查（六条新 merge 逐轮还原）、预切分/码点/优先级三坑与官方流程
 - [[quad-data-curation|QUAD（数据清洗管线）]] — 四阶段蒸馏 69.25M→3.40M（20.4×）反升 2.5 分；质量 > 数量
 - [[mixed-preference-optimization|MPO（混合偏好优化）]] — DPO+BCO+SFT 三项损失落到公式与数值对比走查；离线偏好对齐、偏好对构造与 GRPO 取舍
+- [[ppo|PPO（近端策略优化）]] — clip 替代目标四分支走查、截断 GAE（式 10/11 原文排印笔误考订）、自适应 KL 变体与消融证据；RLHF 第 3 阶段的 RL 引擎、GRPO / DPO 的共同对照
+- [[trpo|TRPO（置信域策略优化）]] — KL 置信域更新 + 单调改进下界：性能差分解、α-coupling 证明思想与 2 状态 MDP 数值走查（式 1 严格相等、下界松弛 ~13、理论惩罚系数 39,600 不可用）、single path / vine 采样、共轭梯度实现；PPO 一阶化的前身
 - [[rlhf|RLHF（人类反馈强化学习）]] — 三阶段管线（SFT→RM→KL 约束 RL），InstructGPT 一手锚定：形化奖励期望恒等式走查（逐样本符号 ≠ 期望含义）、1.3B>175B 实证与对齐税、难训四因、PPO/DPO/MPO/GRPO 四路线谱系
 - [[dpo|DPO（直接偏好优化）]] — RLHF 两阶段折叠为单个偏好损失：重参数化推导（式 4–7）+ 梯度动态加权走查（排错加权 0.513 vs 排对 0.401）；β 与 π_ref 性质、隐式 RM、实验证据
 - [[reward-model|奖励模型]] — RM 两轴分类（判别/生成/隐式 × ORM/PRM）；BT 排序损失数值走查：只学相对序的后果与用途；规则奖励是其系外成员
 - [[grpo|GRPO（组相对策略优化）]] — 无 critic 的 RL：组内相对优势当基线，R1 式训练底座；组内分化决定信号强弱，在线组采样是代价
 - [[rule-based-reward|规则奖励]] — 免 RM / 免偏好标注的评价信号：格式 + 召回 + 精度三路程序化打分；reward hacking 与渐进收紧对策；与学习式 RM 对照
 - [[domain-specific-mllm|领域专用多模态大模型]] — 通用 MLLM 三重错位、领域化配方（数据管线 + 多阶段训练 + 自建基准）与各领域成型栈；参数效率论证与代价
+- [[rope|RoPE（旋转位置编码）]] — 函数方程推出的位置编码：2D 旋转 → $d/2$ 子空间块对角，正交恒等式给出相对语义；长程衰减 Abel 界、线性注意力兼容、七方案对照表；LLaMA 系默认（wiki 外）
 
 ## 分析（analyses/）
 
