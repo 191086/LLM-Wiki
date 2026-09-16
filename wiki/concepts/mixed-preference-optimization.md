@@ -7,7 +7,7 @@ tags:
   - alignment
   - preference-optimization
   - training
-sources: 3
+sources: 4
 ---
 
 # MPO（Mixed Preference Optimization，混合偏好优化）
@@ -32,17 +32,17 @@ $$\mathcal{L}_\text{MPO} = w_1\, \mathcal{L}_\text{preference} + w_2\, \mathcal{
 
 ### 2.2 三项的损失形式
 
-> 三项的具体公式为 wiki 外一般性知识（Ostrakon 论文只引出处不给式子）。候选来源：DPO——Rafailov et al. 2023（arXiv:2305.18290），机制详见 [[dpo]]；BCO——Jung et al.《Binary Classifier Optimization for LLM Alignment》（arXiv:2404.04656，ACL 2025）；SFT——标准的下一词元交叉熵。
+> Ostrakon 论文只引出处不给式子。三项中 DPO 的公式已在库内：[[dpo-paper]] 式 7（机制详见 [[dpo]] §3）。BCO 与 SFT 的公式为 wiki 外一般性知识——BCO 候选来源：Jung et al.《Binary Classifier Optimization for LLM Alignment》（arXiv:2404.04656，ACL 2025）；SFT 即标准的下一词元交叉熵。
 
 记 $h(y \mid x) \coloneqq \log \frac{\pi_\theta(y \mid x)}{\pi_\text{ref}(y \mid x)}$（策略相对冻结参考模型的 log 概率比，$\pi_\text{ref}$ 的角色见 [[dpo]] §4）：
 
-$$\mathcal{L}_\text{pref} = -\,\mathbb{E}\, \log \sigma\!\big(\beta\,(h^+ - h^-)\big) \qquad \text{（源自 DPO：只看差值，学「谁更好」）}$$
+$$\mathcal{L}_\text{pref} = -\,\mathbb{E}\, \log \sigma\!\big(\beta\,(h^+ - h^-)\big) \qquad \text{（源自 [[dpo-paper]] 式 7：只看差值，学「谁更好」）}$$
 
 $$\mathcal{L}_\text{qual} = -\,\mathbb{E}\, \log \sigma\big(\beta\, h^+\big) \;-\; \mathbb{E}\, \log \sigma\big({-\beta\, h^-}\big) \qquad \text{（源自 BCO：两条各判各的，学「绝对好不好」）}$$
 
 $$\mathcal{L}_\text{gen} = -\,\mathbb{E}\, \log \pi_\theta(y^+ \mid x) \qquad \text{（源自 SFT：在 chosen 上做标准交叉熵）}$$
 
-三个术语首次出现时的定位：**DPO**（Direct Preference Optimization）把偏好学习直接做在策略上、无需显式 RM（[[dpo]]）；**BCO**（Binary Classifier Optimization）把「成对比较」退化成「单条二元判断」——每一回答独立地过 sigmoid，好坏信号不再捆绑在对比里；**SFT**（Supervised Fine-Tuning，监督微调）即对目标回答的最大似然。
+三个术语首次出现时的定位：**DPO**（Direct Preference Optimization）把偏好学习直接做在策略上、无需显式 RM（[[dpo]]，出处 [[dpo-paper]]）；**BCO**（Binary Classifier Optimization）把「成对比较」退化成「单条二元判断」——每一回答独立地过 sigmoid，好坏信号不再捆绑在对比里；**SFT**（Supervised Fine-Tuning，监督微调）即对目标回答的最大似然。
 
 ### 2.3 数值走查：为什么偏好项之外还要质量项
 
@@ -81,6 +81,7 @@ $$\mathcal{L}_\text{gen} = -\,\mathbb{E}\, \log \pi_\theta(y^+ \mid x) \qquad \t
 ## 来源
 
 - [[ostrakon-vl-paper]]（式 12 与三项定性、GRPO 对比、偏好对构造）
+- [[dpo-paper]]（§2.2 偏好项的原始出处，式 7）
 - [[skywork-vl-reward-paper]]（§4.7 换 RM 对照实验）
 - [[vision-r1-paper]]（§4.2 GRPO 路线对照数据点）
 

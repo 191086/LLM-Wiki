@@ -7,7 +7,7 @@ tags:
   - reinforcement-learning
   - alignment
   - training
-sources: 1
+sources: 2
 ---
 
 # GRPO（Group Relative Policy Optimization，组相对策略优化）
@@ -31,6 +31,8 @@ $$A_i = \frac{r_i - \mathrm{mean}(\{r_j\}_{j=1}^{N})}{\mathrm{std}(\{r_j\}_{j=1}
 $$\mathcal{J}_{GRPO}(\theta) = \frac{1}{N}\sum_{i=1}^{N}\left(\frac{\pi_\theta(o_i|q)}{\pi_{\theta_{old}}(o_i|q)} A_i - \beta\,\mathbb{KL}\big(\pi_\theta(o_i|q)\,\big\|\,\pi_{ref}(o_i|q)\big)\right)$$
 
 > **[wiki 外一般性知识]** 原始 GRPO 在比率项上还有 PPO 式 clip 截断，上式是 Vision-R1 引用的简化写法。候选来源：DeepSeekMath 论文（arXiv:2402.03300）。
+
+对冻结参考模型 $\pi_{ref}$ 的 KL 惩罚与经典 [[rlhf]] 的约束项同源（[[dpo-paper]] 式 3）——同一条「KL 约束奖励最大化」目标，PPO / GRPO 在线解它，[[dpo]] 用重参数化离线解它。
 
 ### 手工走查：一组 4 个完成的优势计算
 
@@ -60,7 +62,8 @@ $$\mathcal{J}_{GRPO}(\theta) = \frac{1}{N}\sum_{i=1}^{N}\left(\frac{\pi_\theta(o
 ## 来源
 
 - [[vision-r1-paper]]（§3.1 preliminaries、Eq.1–2、§4.1 训练配置；DeepSeekMath / DeepSeek-R1 经其引文 [38][17] 锚定）
+- [[dpo-paper]]（式 3：KL 约束目标与参考模型的同源性）
 
 ## 相关
 
-- [[rule-based-reward]] ｜ [[reward-model]] ｜ [[mixed-preference-optimization]] ｜ [[vision-r1]]
+- [[rlhf]]（KL 约束目标的共同源头）｜ [[rule-based-reward]] ｜ [[reward-model]] ｜ [[mixed-preference-optimization]] ｜ [[vision-r1]] ｜ [[dpo]]
