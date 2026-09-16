@@ -16,7 +16,13 @@ sources: 1
 
 ## 1. 要解决什么问题：注意力天生不认识顺序
 
-自注意力（self-attention，序列中每个位置对其余所有位置做加权平均的机制）是集合式的：对每个 token 做 $\boldsymbol{q}_m = f_q(\boldsymbol{x}_m, m)$、$\boldsymbol{k}_n = f_k(\boldsymbol{x}_n, n)$、$\boldsymbol{v}_n = f_v(\boldsymbol{x}_n, n)$ 三路投影（式 1，$\boldsymbol{x}$ 为词嵌入），权重取 $\mathrm{softmax}(\boldsymbol{q}_m^\top\boldsymbol{k}_n/\sqrt{d})$（式 2）。把输入序列随机打乱，输出跟着同样打乱——注意力本身**置换等变**（permutation-equivariant，输入换序则输出同序重排、内容不变），顺序信息必须额外注入（[[rope-paper]] §2.1）。
+自注意力（self-attention，序列中每个位置对其余所有位置做加权平均的机制）是集合式的：对每个 token 做 query / key / value 三路投影（$\boldsymbol{x}$ 为词嵌入，式 1），再以 softmax 内积权重加权求和（式 2）：
+
+$$\boldsymbol{q}_m = f_q(\boldsymbol{x}_m, m), \qquad \boldsymbol{k}_n = f_k(\boldsymbol{x}_n, n), \qquad \boldsymbol{v}_n = f_v(\boldsymbol{x}_n, n) \tag{式 1}$$
+
+$$a_{m,n} = \frac{\exp\big(\boldsymbol{q}_m^\top\boldsymbol{k}_n/\sqrt{d}\big)}{\sum_{j=1}^{N}\exp\big(\boldsymbol{q}_m^\top\boldsymbol{k}_j/\sqrt{d}\big)}, \qquad \boldsymbol{o}_m = \sum_{n=1}^{N} a_{m,n}\,\boldsymbol{v}_n \tag{式 2}$$
+
+把输入序列随机打乱，输出跟着同样打乱——注意力本身**置换等变**（permutation-equivariant，输入换序则输出同序重排、内容不变），顺序信息必须额外注入（[[rope-paper]] §2.1）。
 
 2017–2021 年的两族注入方案（[[rope-paper]] §2.2–2.3）：
 
@@ -29,7 +35,7 @@ sources: 1
 
 要求位置编码后的 query–key 内积只以相对形式携带位置信息（式 11）：
 
-$$\langle f_q(\boldsymbol{x}_m, m),\ f_k(\boldsymbol{x}_n, n)\rangle = g(\boldsymbol{x}_m, \boldsymbol{x}_n,\, m-n)$$
+$$\langle f_q(\boldsymbol{x}_m, m),\ f_k(\boldsymbol{x}_n, n)\rangle = g(\boldsymbol{x}_m, \boldsymbol{x}_n,\, m-n) \tag{式 11}$$
 
 （$\langle\cdot,\cdot\rangle$ 为内积；$f_q, f_k$ 就是式 1 里待定的编码函数，$g$ 是某个双线性打分。）直觉：注意该问「**隔多远**」，不该问「**在哪**」——平移整段文本，注意力权重不应改变。另附空位初始条件 $f(\boldsymbol{x}, 0)$ 为无位置编码向量（式 22），作为解的规范化锚点。问题是：满足它的 $f_q, f_k$ 长什么样、是否唯一。
 
@@ -41,7 +47,7 @@ $$\langle f_q(\boldsymbol{x}_m, m),\ f_k(\boldsymbol{x}_n, n)\rangle = g(\boldsy
 
 于是（式 31–33）：
 
-$$f_q(\boldsymbol{x}_m, m) = (\boldsymbol{W}_q\boldsymbol{x}_m)\,e^{\mathrm{i}m\theta}, \qquad f_k(\boldsymbol{x}_n, n) = (\boldsymbol{W}_k\boldsymbol{x}_n)\,e^{\mathrm{i}n\theta}$$
+$$f_q(\boldsymbol{x}_m, m) = (\boldsymbol{W}_q\boldsymbol{x}_m)\,e^{\mathrm{i}m\theta}, \qquad f_k(\boldsymbol{x}_n, n) = (\boldsymbol{W}_k\boldsymbol{x}_n)\,e^{\mathrm{i}n\theta} \tag{式 31–33}$$
 
 写成实数形式，就是用 $2\times2$ 旋转矩阵 $\begin{pmatrix}\cos m\theta & -\sin m\theta\\ \sin m\theta & \cos m\theta\end{pmatrix}$ 左乘常规投影后的向量（式 13）。$\gamma$ 取 0 只为与绝对式（式 3）对齐；**$\theta$ 是解里唯一的自由度**——「位置以均匀角速度旋转进入编码」是约束的必然，不是设计选择。
 
@@ -49,11 +55,11 @@ $$f_q(\boldsymbol{x}_m, m) = (\boldsymbol{W}_q\boldsymbol{x}_m)\,e^{\mathrm{i}m\
 
 $d$（偶数）维拆成 $d/2$ 个二维子空间，各配一个角速度（式 14–15）：
 
-$$f_{\{q,k\}}(\boldsymbol{x}_m, m) = \boldsymbol{R}^d_{\Theta,m}\boldsymbol{W}_{\{q,k\}}\boldsymbol{x}_m, \qquad \boldsymbol{R}^d_{\Theta,m} = \mathrm{blockdiag}\big(\boldsymbol{R}(m\theta_1), \ldots, \boldsymbol{R}(m\theta_{d/2})\big), \quad \theta_i = 10000^{-2(i-1)/d}$$
+$$f_{\{q,k\}}(\boldsymbol{x}_m, m) = \boldsymbol{R}^d_{\Theta,m}\boldsymbol{W}_{\{q,k\}}\boldsymbol{x}_m, \qquad \boldsymbol{R}^d_{\Theta,m} = \mathrm{blockdiag}\big(\boldsymbol{R}(m\theta_1), \ldots, \boldsymbol{R}(m\theta_{d/2})\big), \quad \theta_i = 10000^{-2(i-1)/d} \tag{式 14–15}$$
 
 （$\boldsymbol{R}(\cdot)$ 即上节的 $2\times2$ 旋转；base $=10000$ 沿用 Vaswani 式 4 的频率几何——论文 §3.3 行文用 $10000^{-2i/d}$，与式 15 相差一个指标平移、频率族等价，见来源页考订②。）相对性一行推完（式 16）：
 
-$$\boldsymbol{q}_m^\top\boldsymbol{k}_n = (\boldsymbol{R}_m\boldsymbol{W}_q\boldsymbol{x}_m)^\top(\boldsymbol{R}_n\boldsymbol{W}_k\boldsymbol{x}_n) = \boldsymbol{x}_m^\top\boldsymbol{W}_q^\top\,\boldsymbol{R}^d_{\Theta,n-m}\,\boldsymbol{W}_k\boldsymbol{x}_n, \qquad \boldsymbol{R}_m^\top\boldsymbol{R}_n = \boldsymbol{R}_{n-m}$$
+$$\boldsymbol{q}_m^\top\boldsymbol{k}_n = (\boldsymbol{R}_m\boldsymbol{W}_q\boldsymbol{x}_m)^\top(\boldsymbol{R}_n\boldsymbol{W}_k\boldsymbol{x}_n) = \boldsymbol{x}_m^\top\boldsymbol{W}_q^\top\,\boldsymbol{R}^d_{\Theta,n-m}\,\boldsymbol{W}_k\boldsymbol{x}_n, \qquad \boldsymbol{R}_m^\top\boldsymbol{R}_n = \boldsymbol{R}_{n-m} \tag{式 16}$$
 
 正交旋转阵的转置相消把绝对位置 $m, n$ 归并成差 $n-m$——相对语义来自**代数恒等式**，不需要像相对式那样改写展开式。频率谱上，低维子空间角速度大（波长 $\lambda_i = 2\pi/\theta_i$ 短）、高维子空间波长长：$d=4$ 时两维波长分别为 $6.28$ 与 $62{,}832$ 个位置（本机复算）——低维分辨近距、高维表达远距，正弦族「多分辨率」直觉的乘法版。
 
@@ -64,7 +70,7 @@ $$\boldsymbol{q}_m^\top\boldsymbol{k}_n = (\boldsymbol{R}_m\boldsymbol{W}_q\bold
 
 块对角旋转矩阵极稀疏，不必显式构造。按式 34，$\boldsymbol{R}^d_{\Theta,m}\boldsymbol{x}$ = 两组逐元素乘之和：
 
-$$\boldsymbol{R}^d_{\Theta,m}\boldsymbol{x} = \begin{pmatrix}x_1\\x_2\\x_3\\x_4\\\vdots\end{pmatrix} \otimes \begin{pmatrix}\cos m\theta_1\\\cos m\theta_1\\\cos m\theta_2\\\cos m\theta_2\\\vdots\end{pmatrix} + \begin{pmatrix}-x_2\\x_1\\-x_4\\x_3\\\vdots\end{pmatrix} \otimes \begin{pmatrix}\sin m\theta_1\\\sin m\theta_1\\\sin m\theta_2\\\sin m\theta_2\\\vdots\end{pmatrix}$$
+$$\boldsymbol{R}^d_{\Theta,m}\boldsymbol{x} = \begin{pmatrix}x_1\\x_2\\x_3\\x_4\\\vdots\end{pmatrix} \otimes \begin{pmatrix}\cos m\theta_1\\\cos m\theta_1\\\cos m\theta_2\\\cos m\theta_2\\\vdots\end{pmatrix} + \begin{pmatrix}-x_2\\x_1\\-x_4\\x_3\\\vdots\end{pmatrix} \otimes \begin{pmatrix}\sin m\theta_1\\\sin m\theta_1\\\sin m\theta_2\\\sin m\theta_2\\\vdots\end{pmatrix} \tag{式 34}$$
 
 （$\otimes$ 为逐元素乘。）每维 4 乘 2 加、$O(d)$，且逐位置独立、可并行；预计算 $\sin/\cos$ 表后推理开销可忽略。两个工程注记：
 
@@ -85,7 +91,7 @@ $$\boldsymbol{R}^d_{\Theta,m}\boldsymbol{x} = \begin{pmatrix}x_1\\x_2\\x_3\\x_4\
 
 把内积按相邻二维分量配对写成复数求和（式 35）：$\mathrm{Re}\big[\sum_i h_i\, e^{\mathrm{i}(m-n)\theta_i}\big]$，$h_i = \boldsymbol{q}_{2i:2i+1}\boldsymbol{k}^*_{2i:2i+1}$。对 $\sum_i h_i e^{\mathrm{i}(m-n)\theta_i}$ 用 **Abel 变换**（离散分部求和，把「频率因子的部分和」与「系数差分」重新配对的恒等式）得（式 36–37）：
 
-$$\Big|\sum_i h_i e^{\mathrm{i}(m-n)\theta_i}\Big| \le \big(\max_i|h_{i+1}-h_i|\big)\cdot\sum_i|S_{i+1}|, \qquad S_j = \sum_{i=0}^{j-1} e^{\mathrm{i}(m-n)\theta_i}$$
+$$\Big|\sum_i h_i e^{\mathrm{i}(m-n)\theta_i}\Big| \le \big(\max_i|h_{i+1}-h_i|\big)\cdot\sum_i|S_{i+1}|, \qquad S_j = \sum_{i=0}^{j-1} e^{\mathrm{i}(m-n)\theta_i} \tag{式 37}$$
 
 右侧 $\sum|S_{i+1}|$ 是**非完备三角和**——相位步长 $\theta_i$ 取自几何递减序列（$10000^{-2i/d}$）时，它随相对距离 $|m-n|$ 增大而衰减（Figure 2：距离 0→250 包络约 20 → 7–8，带振荡）。两个口径提醒：①衰减的是内积的**上界**，不是内积逐点单调；②衰减性由正弦频率族给出，并非 RoPE 独有——论文自陈长文表现优于同类「无忠实解释」（§4.5.5）。
 
@@ -96,7 +102,7 @@ $$\Big|\sum_i h_i e^{\mathrm{i}(m-n)\theta_i}\Big| \le \big(\max_i|h_{i+1}-h_i|\
 
 softmax 注意力要对全部 $N^2$ 个位置对算内积。**线性注意力**（linear attention，用非负特征映射 $\phi$ 拆开 $\exp(\boldsymbol{q}^\top\boldsymbol{k}/\sqrt d)$ 使求和可换序、复杂度降到 $O(N)$ 的近似注意力，如 $\phi(x) = \mathrm{elu}(x)+1$，Performer 等）形如（式 18）：
 
-$$\mathrm{Attention}(\boldsymbol{Q},\boldsymbol{K},\boldsymbol{V})_m = \frac{\sum_n \phi(\boldsymbol{q}_m)^\top\phi(\boldsymbol{k}_n)\,\boldsymbol{v}_n}{\sum_n \phi(\boldsymbol{q}_m)^\top\phi(\boldsymbol{k}_n)}$$
+$$\mathrm{Attention}(\boldsymbol{Q},\boldsymbol{K},\boldsymbol{V})_m = \frac{\sum_n \phi(\boldsymbol{q}_m)^\top\phi(\boldsymbol{k}_n)\,\boldsymbol{v}_n}{\sum_n \phi(\boldsymbol{q}_m)^\top\phi(\boldsymbol{k}_n)} \tag{式 18}$$
 
 RoPE 把旋转矩阵乘在**分子**两侧 $\phi(\cdot)$ 的输出上（式 19），分母保持不动：防除零；分子可含负项，权重不再严格概率归一——论文论点是这样仍能表达各 value 的重要性（§3.3）。旧相对式方案全线不兼容，因为它们的位置项全部寄生在 softmax 内积展开的各项上（式 6–10），线性注意力里没有对应结构可改；RoPE 的乘性注入不依赖任何展开形式。
 
@@ -118,15 +124,15 @@ RoPE 把旋转矩阵乘在**分子**两侧 $\phi(\cdot)$ 的输出上（式 19�
 
 ## 7. 位置编码方案对照
 
-| 方案 | 注入方式 | 位置语义 | 额外参数 | 线性注意力兼容 | 出处锚点 |
-| --- | --- | --- | --- | --- | --- |
-| 正弦绝对（式 4） | 输入端加 | 绝对 | 0 | ✗ | [[rope-paper]] §2.2 |
-| 可训练绝对（式 3，BERT） | 输入端加 | 绝对 | $L\times d$ | ✗ | §2.2 |
-| Shaw 相对（式 5） | key/value 加 | 相对（clip 截断） | 相对嵌入表 ×2 | ✗ | §2.3 |
-| Transformer-XL（式 6–7） | 内积四项改造 | 相对 | $\boldsymbol{u},\boldsymbol{v},\widetilde{\boldsymbol{W}}_k$ | ✗ | §2.3 |
-| T5 bias（式 8） | 内积加 bias | 相对（分桶） | bucket 表 | ✗ | §2.3 |
-| DeBERTa（式 10） | 内积只留交叉项 | 相对 | 相对嵌入表 | ✗ | §2.3 |
-| **RoPE（式 14–16）** | **q/k 乘旋转** | **绝对式实现、相对式语义** | **0** | **✓（式 19）** | §3 |
+| 方案                    | 注入方式        | 位置语义            | 额外参数                                                         | 线性注意力兼容     | 出处锚点                |
+| --------------------- | ----------- | --------------- | ------------------------------------------------------------ | ----------- | ------------------- |
+| 正弦绝对（式 4）             | 输入端加        | 绝对              | 0                                                            | ✗           | [[rope-paper]] §2.2 |
+| 可训练绝对（式 3，BERT）       | 输入端加        | 绝对              | $L\times d$                                                  | ✗           | §2.2                |
+| Shaw 相对（式 5）          | key/value 加 | 相对（clip 截断）     | 相对嵌入表 ×2                                                     | ✗           | §2.3                |
+| Transformer-XL（式 6–7） | 内积四项改造      | 相对              | $\boldsymbol{u},\boldsymbol{v},\widetilde{\boldsymbol{W}}_k$ | ✗           | §2.3                |
+| T5 bias（式 8）          | 内积加 bias    | 相对（分桶）          | bucket 表                                                     | ✗           | §2.3                |
+| DeBERTa（式 10）         | 内积只留交叉项     | 相对              | 相对嵌入表                                                        | ✗           | §2.3                |
+| **RoPE（式 14–16）**     | **q/k 乘旋转** | **绝对式实现、相对式语义** | **0**                                                        | **✓（式 19）** | §3                  |
 
 ## 来源
 

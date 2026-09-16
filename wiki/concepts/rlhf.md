@@ -28,17 +28,21 @@ sources: 3
 1. **SFT**：标注员对 prompt 撰写示范（~13k 训练 prompt），监督微调 GPT-3 得 $\pi^{SFT}$——后续一切以它为起点。工程细节：训 16 epochs，验证损失 1 epoch 后就过拟合，但 RM 分与人类偏好评分仍随 epochs 提升，所以**按 RM 分选模型**、不按验证损失（[[instructgpt-paper]] §3.5、C.1）。
 2. **奖励建模**：同一 prompt 采 K 个输出，标注员从优到劣排序，展开成 $\binom{K}{2}$ 个偏好对 $y_w \succ y_l$；假设偏好由潜奖励 $r^*(x,y)$ 经 **Bradley-Terry 模型**（偏好概率 = 分差过 sigmoid 的概率模型，[[reward-model]] §4.1）生成，以负对数似然拟合 $r_\theta$——即 [[instructgpt-paper]] 式 1：
 
-$$\mathrm{loss}(\theta) = -\frac{1}{\binom{K}{2}}\,\mathbb{E}_{(x,y_w,y_l)\sim\mathcal{D}}\Big[\log\sigma\big(r_\theta(x,y_w) - r_\theta(x,y_l)\big)\Big]$$
+$$\mathrm{loss}(\theta) = -\frac{1}{\binom{K}{2}}\,\mathbb{E}_{(x,y_w,y_l)\sim\mathcal{D}}\Big[\log\sigma\big(r_\theta(x,y_w) - r_\theta(x,y_l)\big)\Big] \tag{式 1}$$
 
 三个工程细节：只用 **6B RM**（175B RM 训练不稳定，不宜作 PPO 值函数初始化，且算力贵，附录 C.2）；同一 prompt 的全部 $\binom{K}{2}$ 对打包为**单个 batch 元素**（各对高度相关，拆成独立样本则单 epoch 即过拟合，还把每回答的前向次数从 $\binom{K}{2}$ 降到 1）；训练前用 bias 把示范数据均分归 0——损失平移不变、绝对分不可辨识，必须人为定锚（[[instructgpt-paper]] §3.5；平移不变性见 [[reward-model]] §4.3）。
 
-3. **RL 微调**：bandit 环境（一句 prompt 采一条回答即终局结算，无多步状态），[[ppo|PPO]] 最大化 RM 打分；同时每个 token 加对 $\pi^{SFT}$ 的 KL 惩罚（β=0.02），缓解对 RM 的过度优化（reward hacking，[[rule-based-reward]] §4）；值函数从 RM 初始化（[[instructgpt-paper]] §3.5、C.4）。**PPO-ptx** 变体在目标里再混入预训练数据的对数似然梯度（系数 γ=27.8、预训练样本量 8× 于 RL episodes，附录 C.4），用于缴「对齐税」（见 §3.3；式 2 原文见 [[instructgpt-paper]] §3.5）。
+3. **RL 微调**：bandit 环境（一句 prompt 采一条回答即终局结算，无多步状态），[[ppo|PPO]] 最大化 RM 打分；同时每个 token 加对 $\pi^{SFT}$ 的 KL 惩罚（β=0.02），缓解对 RM 的过度优化（reward hacking，[[rule-based-reward]] §4）；值函数从 RM 初始化（[[instructgpt-paper]] §3.5、C.4）。**PPO-ptx** 变体在目标里再混入预训练数据的对数似然梯度（系数 γ=27.8、预训练样本量 8× 于 RL episodes，附录 C.4），用于缴「对齐税」（见 §3.3；目标即下方式 2）。
 
 阶段 3 解的形式化目标即 KL 约束的奖励最大化（[[dpo-paper]] 式 3）：
 
-$$\max_{\pi_\theta}\ \mathbb{E}_{x \sim \mathcal{D},\, y \sim \pi_\theta(y|x)} \big[r_\phi(x, y)\big] - \beta\, \mathbb{D}_\mathrm{KL}\big(\pi_\theta(y|x)\ \|\ \pi_\text{ref}(y|x)\big)$$
+$$\max_{\pi_\theta}\ \mathbb{E}_{x \sim \mathcal{D},\, y \sim \pi_\theta(y|x)} \big[r_\phi(x, y)\big] - \beta\, \mathbb{D}_\mathrm{KL}\big(\pi_\theta(y|x)\ \|\ \pi_\text{ref}(y|x)\big) \tag{式 3}$$
 
-实践中把约束并入奖励构造 $r(x,y) = r_\phi(x,y) - \beta\big(\log \pi_\theta(y|x) - \log \pi_\text{ref}(y|x)\big)$（InstructGPT 式 2 是它的逐 token 工程版，$\pi_\text{ref} = \pi^{SFT}$）用 PPO 最大化。$\beta$ 控制偏离参考策略的代价：没有这一项，策略会涌向 RM 打分虚高但实际糟糕的回答，并塌缩成单一高分回答、丧失多样性（[[dpo-paper]] §3）。
+实践中把约束并入奖励构造 $r(x,y) = r_\phi(x,y) - \beta\big(\log \pi_\theta(y|x) - \log \pi_\text{ref}(y|x)\big)$ 用 PPO 最大化。InstructGPT 式 2 是它的逐 token 工程版（$\pi_\text{ref} = \pi^{SFT}$；PPO-ptx 再把预训练对数似然以系数 $\gamma$ 混入目标）：
+
+$$\mathrm{objective}(\phi) = \mathbb{E}_{(x,\,y)\sim D_{\pi_\phi^{RL}}} \Big[r_\theta(x, y) - \beta\,\log\frac{\pi_\phi^{RL}(y \mid x)}{\pi^{SFT}(y \mid x)}\Big] + \gamma\, \mathbb{E}_{x \sim D_\text{pretrain}} \big[\log \pi_\phi^{RL}(x)\big] \tag{式 2}$$
+
+（$\gamma = 0$ 即纯 PPO；本文 InstructGPT 默认指 PPO-ptx。）$\beta$ 控制偏离参考策略的代价：没有这一项，策略会涌向 RM 打分虚高但实际糟糕的回答，并塌缩成单一高分回答、丧失多样性（[[dpo-paper]] §3）。
 
 ### 手工走查：形化奖励的逐样本符号 ≠ 约束的逐样本含义
 

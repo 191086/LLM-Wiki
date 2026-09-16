@@ -2,7 +2,7 @@
 type: concept
 title: QUAD（质量感知数据清洗管线）
 created: 2026-09-14
-updated: 2026-09-15
+updated: 2026-09-16
 tags:
   - data-curation
   - mllm
@@ -18,13 +18,13 @@ sources: 2
 
 1. **Quality Filtering（质量过滤）**：奖励模型 $R_\phi$（实现用 [[skywork-vl-reward|Skywork-VL-Reward]]，直接取用未做领域适配）给三元组 $(I, q, a)$ 打分 $r_a = R_\phi(I, q, a)$，按阈值 Top-p% 保留；附**视觉消融检验**——去掉图只给 q 让生成器重答 $\bar{a} = G_\theta(q)$，若原回答与「盲答」的奖励差距 $r_a - r_{\bar{a}}$ 小于阈值，说明答案靠语言先验而非视觉证据，剔除。联合保留准则（论文式 4）：
 
-   $$(I, q, a) \in D_1 \iff r_a \ge \tau \;\land\; (r_a - r_{\bar{a}}) \ge \tau_{\bar{a}}$$
+   $$(I, q, a) \in D_1 \iff r_a \ge \tau \;\land\; (r_a - r_{\bar{a}}) \ge \tau_{\bar{a}} \tag{式 4}$$
 
    > 注（非 Ostrakon 论文原话）：这个统一打分器自身的训练语料，同样是「surrogate RM 打分 → 按分修订重生成」的三阶段清洗产物（[[skywork-vl-reward-paper]] §3.2）——裁判与被清洗数据的方法论同源，且其风格偏好（惩罚冗长自校正）与域错配一样构成潜在偏置源（见 [[skywork-vl-reward]] 隐患两条）。
 
 2. **Foundation Model Referenced Filtering（基座参考过滤）**：让基座模型（[[ostrakon-vl]] 微调前的起点 [[qwen|Qwen3-VL-8B]] 本尊，非裸预训练模型）对每题生成参考回答 $\tilde{a}$ 并打分 $r_{\tilde{a}} = R_\phi(I, q, \tilde{a})$，若奖励差 $\Delta r = r_a - r_{\tilde{a}}$ 小于阈值 $\tau_{\tilde{a}}$（基座已经会了），该样本无学习增益，剔除——直接优化「可学习性」。保留准则（论文式 6）：
 
-   $$(I, q, a) \in D_2 \iff (I, q, a) \in D_1 \;\land\; \Delta r \ge \tau_{\tilde{a}}$$
+   $$(I, q, a) \in D_2 \iff (I, q, a) \in D_1 \;\land\; \Delta r \ge \tau_{\tilde{a}} \tag{式 6}$$
 
 3. **Multimodal Semantic Deduplication（多模态语义去重）**：GME-Qwen2VL-2B 提取图文联合嵌入，SemDeDup 式 k-means 聚类 + 类内 k-center 选择，保语义覆盖删近重复
 4. **Capability Coverage Redistribution（能力覆盖重分布）**：能力分类器 $\mathcal{M}_{\mathcal{C}}$（微调自 Qwen3-8B，约 7,000 条种子标注）预测每题的功能类别 $c = \mathcal{M}_{\mathcal{C}}(q)$，再按目标先验分布 $\pi(c)$ 分层重采样，纠正多级过滤造成的能力偏斜

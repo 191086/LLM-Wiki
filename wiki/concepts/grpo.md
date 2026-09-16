@@ -2,7 +2,7 @@
 type: concept
 title: GRPO（组相对策略优化）
 created: 2026-09-15
-updated: 2026-09-15
+updated: 2026-09-16
 tags:
   - reinforcement-learning
   - alignment
@@ -24,11 +24,11 @@ sources: 2
 
 **组内相对优势**（[[vision-r1-paper]] Eq.1）：
 
-$$A_i = \frac{r_i - \mathrm{mean}(\{r_j\}_{j=1}^{N})}{\mathrm{std}(\{r_j\}_{j=1}^{N})}$$
+$$A_i = \frac{r_i - \mathrm{mean}(\{r_j\}_{j=1}^{N})}{\mathrm{std}(\{r_j\}_{j=1}^{N})} \tag{Eq.1}$$
 
 **目标函数**（[[vision-r1-paper]] Eq.2；比率项乘优势 + 对冻结参考模型 $\pi_{ref}$ 的 KL 惩罚，$\beta$ 为系数）：
 
-$$\mathcal{J}_{GRPO}(\theta) = \frac{1}{N}\sum_{i=1}^{N}\left(\frac{\pi_\theta(o_i|q)}{\pi_{\theta_{old}}(o_i|q)} A_i - \beta\,\mathbb{KL}\big(\pi_\theta(o_i|q)\,\big\|\,\pi_{ref}(o_i|q)\big)\right)$$
+$$\mathcal{J}_{GRPO}(\theta) = \frac{1}{N}\sum_{i=1}^{N}\left(\frac{\pi_\theta(o_i|q)}{\pi_{\theta_{old}}(o_i|q)} A_i - \beta\,\mathbb{KL}\big(\pi_\theta(o_i|q)\,\big\|\,\pi_{ref}(o_i|q)\big)\right) \tag{Eq.2}$$
 
 > **[wiki 外一般性知识]** 原始 GRPO 在比率项上还有 [[ppo]] 式 clip 截断（机制见 [[ppo]] §2），上式是 Vision-R1 引用的简化写法。候选来源：DeepSeekMath 论文（arXiv:2402.03300）。
 

@@ -30,7 +30,7 @@ sources: 1
 
 一切从 Kakade & Langford (2002) 的**性能差分解**开始（式 1）：新策略的回报变化可以**精确**写成「新策略轨迹上**旧策略**优势函数（advantage，$A_\pi(s,a) = Q_\pi(s,a) - V_\pi(s)$，动作比该状态平均水平好多少；$V$ 为期望回报、$Q$ 为取该动作后的期望回报）的折扣和」：
 
-$$\eta(\tilde\pi) = \eta(\pi) + \mathbb{E}_{\tau\sim\tilde\pi}\Big[\sum_{t=0}^{\infty} \gamma^t A_\pi(s_t, a_t)\Big]$$
+$$\eta(\tilde\pi) = \eta(\pi) + \mathbb{E}_{\tau\sim\tilde\pi}\Big[\sum_{t=0}^{\infty} \gamma^t A_\pi(s_t, a_t)\Big] \tag{式 1}$$
 
 （$\eta(\pi)$ 为期望折扣回报，$\gamma$ 为折扣因子；期望对新策略 $\tilde\pi$ 产生的轨迹取。）读法：三个成分各司其职——$\tau\sim\tilde\pi$ 管轨迹（「走哪条路」由新策略定），$A_\pi$ 管评分（以旧策略的价值函数衡量该动作比平均水平多赚多少），$\gamma^t$ 与回报同折扣。
 
@@ -42,19 +42,27 @@ $$\mathbb{E}\Big[\sum_t \gamma^t A_\pi(s_t,a_t)\Big] = \eta(\tilde\pi) + \sum_{t
 
 把轨迹期望按状态展开、换用旧策略的（未归一化折扣）访问频率 $\rho_\pi$ 加权，得**替代目标**（式 3）：
 
-$$L_\pi(\tilde\pi) = \eta(\pi) + \sum_s \rho_\pi(s) \sum_a \tilde\pi(a|s)\, A_\pi(s,a)$$
+$$L_\pi(\tilde\pi) = \eta(\pi) + \sum_s \rho_\pi(s) \sum_a \tilde\pi(a|s)\, A_\pi(s,a) \tag{式 3}$$
 
 $L_\pi$ 与 $\eta$ 在 $\tilde\pi = \pi$ 处值相等、梯度匹配（式 4）——它是 $\eta$ 的一阶近似。但**一阶近似只在 $\pi$ 的极小邻域可信**： $L_\pi(\tilde\pi) \ge 0$ 的逐状态改进并不能保证 $\eta(\tilde\pi) \ge \eta(\pi)$（摘要自陈「some states for which the expected advantage is negative」的情形）。Theorem 1 补的正是这一步。
 
 ### 2.2 CPI 下界与 Theorem 1（式 5–9）
 
-Kakade & Langford 对**混合策略**（新策略与旧策略按 $\alpha$ 概率混合，式 5）给出下界（式 6）：$\eta(\pi_{new}) \ge L_{\pi_{old}}(\pi_{new}) - \frac{2\epsilon\gamma}{(1-\gamma)^2}\alpha^2$。TRPO 把它推广到**任意随机策略**（Theorem 1，式 8）：
+Kakade & Langford 对**混合策略**（改进策略 $\pi' = \arg\max_{\pi'} L_{\pi_{old}}(\pi')$ 与当前策略 $\pi_{old}$ 按 $\alpha$ 概率混合，式 5）：
 
-$$\eta(\tilde\pi) \ge L_\pi(\tilde\pi) - \frac{4\epsilon\gamma}{(1-\gamma)^2}\,\alpha^2, \qquad \epsilon = \max_{s,a}|A_\pi(s,a)|,\ \ \alpha = D^{\max}_{\mathrm{TV}}(\pi, \tilde\pi)$$
+$$\pi_{new}(a|s) = (1-\alpha)\,\pi_{old}(a|s) + \alpha\,\pi'(a|s) \tag{式 5}$$
+
+给出下界（式 6）：
+
+$$\eta(\pi_{new}) \ge L_{\pi_{old}}(\pi_{new}) - \frac{2\epsilon\gamma}{(1-\gamma)^2}\,\alpha^2 \tag{式 6}$$
+
+TRPO 把它推广到**任意随机策略**（Theorem 1，式 8）：
+
+$$\eta(\tilde\pi) \ge L_\pi(\tilde\pi) - \frac{4\epsilon\gamma}{(1-\gamma)^2}\,\alpha^2, \qquad \epsilon = \max_{s,a}|A_\pi(s,a)|,\ \ \alpha = D^{\max}_{\mathrm{TV}}(\pi, \tilde\pi) \tag{式 8}$$
 
 （$D_{\mathrm{TV}}$ 为全变差距离，total variation distance，$\frac{1}{2}\sum_a|p_a - q_a|$；注意此处 $\epsilon$ 是优势的绝对值上界，与 PPO 的截断系数 $\epsilon$ 无关。）再用 $D_{\mathrm{TV}}^2 \le D_{\mathrm{KL}}$ 换成 KL 形式（式 9）：
 
-$$\eta(\tilde\pi) \ge L_\pi(\tilde\pi) - C\, D^{\max}_{\mathrm{KL}}(\pi, \tilde\pi), \qquad C = \frac{4\epsilon\gamma}{(1-\gamma)^2}$$
+$$\eta(\tilde\pi) \ge L_\pi(\tilde\pi) - C\, D^{\max}_{\mathrm{KL}}(\pi, \tilde\pi), \qquad C = \frac{4\epsilon\gamma}{(1-\gamma)^2} \tag{式 9}$$
 
 **这就是单调改进的钥匙**（式 10）：记 $M(\tilde\pi) = L_\pi(\tilde\pi) - C\,D^{\max}_{\mathrm{KL}}(\pi,\tilde\pi)$，则 $\eta(\pi) = M(\pi)$ 且 $M(\tilde\pi) \le \eta(\tilde\pi)$——$M$ 是 $\eta$ 在 $\pi$ 处**相切的下界**（minorization–maximization，MM 算法，一类「最大化目标函数局部下界」的迭代方法，期望最大化 EM 是其特例）。于是 $\eta(\pi_{i+1}) \ge M(\pi_{i+1}) \ge M(\pi_i) = \eta(\pi_i)$，最大化 $M$ 的迭代永不退步（Algorithm 1：带 KL 惩罚的策略迭代）。
 

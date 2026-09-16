@@ -2,7 +2,7 @@
 type: concept
 title: DPO（Direct Preference Optimization，直接偏好优化）
 created: 2026-09-15
-updated: 2026-09-15
+updated: 2026-09-16
 tags:
   - alignment
   - preference-optimization
@@ -22,13 +22,17 @@ sources: 3
 
 RLHF 的 RL 目标（最大化奖励 + KL 正则，[[dpo-paper]] 式 3）有闭式最优解（[[dpo-paper]] 式 4，附录 A.1 给完整推导）：
 
-$$\pi^*(y \mid x) = \frac{1}{Z(x)}\, \pi_\text{ref}(y \mid x)\, \exp\!\Big(\frac{1}{\beta}\, r(x, y)\Big)$$
+$$\pi^*(y \mid x) = \frac{1}{Z(x)}\, \pi_\text{ref}(y \mid x)\, \exp\!\Big(\frac{1}{\beta}\, r(x, y)\Big) \tag{式 4}$$
 
 其中 $Z(x) = \sum_y \pi_\text{ref}(y \mid x) \exp\!\big(r(x, y)/\beta\big)$ 是**配分函数**（对全部候选回答求和的归一化常数，依赖 $x$ 但与单个 $y$ 无关），$\pi_\text{ref}$ 是冻结的参考模型（通常 = SFT 模型）。直接用式 4 不现实——估计 $Z(x)$ 本身很难；但这行可以**反解**出 $r$（两边取对数、移项，[[dpo-paper]] 式 5）：
 
-$$r(x, y) = \beta \log \frac{\pi^*(y \mid x)}{\pi_\text{ref}(y \mid x)} + \beta \log Z(x)$$
+$$r(x, y) = \beta \log \frac{\pi^*(y \mid x)}{\pi_\text{ref}(y \mid x)} + \beta \log Z(x) \tag{式 5}$$
 
-奖励被表示成了「策略与参考模型的对数概率比」。最后一步：把这个 $r$ 代回 Bradley-Terry 偏好概率 $P(y^+ \succ y^- \mid x) = \sigma(r^+ - r^-)$——$\beta \log Z(x)$ 只依赖 $x$，在做差时**相消**（[[dpo-paper]] 式 6）。偏好概率于是只依赖概率比，显式 RM 彻底消失。
+奖励被表示成了「策略与参考模型的对数概率比」。最后一步：把这个 $r$ 代回 Bradley-Terry 偏好概率 $P(y^+ \succ y^- \mid x) = \sigma(r^+ - r^-)$——$\beta \log Z(x)$ 只依赖 $x$，在做差时**相消**（[[dpo-paper]] 式 6）：
+
+$$p^*(y_1 \succ y_2 \mid x) = \frac{1}{1 + \exp\Big(\beta \log \frac{\pi^*(y_2 \mid x)}{\pi_\text{ref}(y_2 \mid x)} - \beta \log \frac{\pi^*(y_1 \mid x)}{\pi_\text{ref}(y_1 \mid x)}\Big)} \tag{式 6}$$
+
+（$y_1$ 即 $y^+$、$y_2$ 即 $y^-$；按 $1/(1+e^{-a}) = \sigma(a)$，指数里正是两个对数概率比的负 margin。）偏好概率于是只依赖概率比，显式 RM 彻底消失。
 
 这个替换不损失一般性：论文 §5.1 定义「奖励等价类」——两个奖励函数若只差一个 $f(x)$（只依赖 prompt 的函数）则等价，并证明（Lemma 1、2）等价类内所有成员诱导**相同的偏好分布与相同的最优策略**；Theorem 1 进一步证明每个等价类都有（且 Proposition 1：唯一有）一个形如 $r = \beta \log \frac{\pi}{\pi_\text{ref}}$ 的代表成员。所以「只能表示这类奖励」不是约束——BT/Plackett-Luce 可表达的奖励，重参数化全能覆盖。
 
@@ -36,7 +40,7 @@ $$r(x, y) = \beta \log \frac{\pi^*(y \mid x)}{\pi_\text{ref}(y \mid x)} + \beta 
 
 把 §2 的 $r$ 代入 BT 损失（[[reward-model]] §4），对策略 $\pi_\theta$ 直接最小化（[[dpo-paper]] 式 7）：
 
-$$\mathcal{L}_\text{DPO} = -\,\mathbb{E}_{(x,\, y^+,\, y^-)}\ \log \sigma\!\Big(\beta \log \frac{\pi_\theta(y^+ \mid x)}{\pi_\text{ref}(y^+ \mid x)} - \beta \log \frac{\pi_\theta(y^- \mid x)}{\pi_\text{ref}(y^- \mid x)}\Big)$$
+$$\mathcal{L}_\text{DPO} = -\,\mathbb{E}_{(x,\, y^+,\, y^-)}\ \log \sigma\!\Big(\beta \log \frac{\pi_\theta(y^+ \mid x)}{\pi_\text{ref}(y^+ \mid x)} - \beta \log \frac{\pi_\theta(y^- \mid x)}{\pi_\text{ref}(y^- \mid x)}\Big) \tag{式 7}$$
 
 形式上就是 BT 损失把打分器换成 $s = \beta \log \frac{\pi_\theta}{\pi_\text{ref}}$——纯监督学习：一遍前向、一遍反向，没有在线采样。实现十余行 PyTorch（论文附录 B 给出参考实现：两个序列的 log-prob 差过 `logsigmoid`）。数值小例（取 $\beta = 1$，记 $h = \log \frac{\pi_\theta(y\mid x)}{\pi_\text{ref}(y\mid x)}$）：
 

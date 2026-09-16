@@ -32,11 +32,11 @@ $$r_t(\theta) = \frac{\pi_\theta(a_t \mid s_t)}{\pi_{\theta_{old}}(a_t \mid s_t)
 
 TRPO 最大化的替代目标 $L^{CPI}$（式 6，CPI = conservative policy iteration，该目标最早由 Kakade & Langford 2002 提出）：
 
-$$L^{CPI}(\theta) = \hat{\mathbb{E}}_t\big[r_t(\theta)\,\hat{A}_t\big]$$
+$$L^{CPI}(\theta) = \hat{\mathbb{E}}_t\big[r_t(\theta)\,\hat{A}_t\big] \tag{式 6}$$
 
 其中 $\hat{A}_t$ 是**优势**（advantage）估计：动作 $a_t$ 比该状态的平均水平（值函数 $V(s_t)$，即从此状态出发的期望回报估计，兼作 baseline）好多少；优势为正 → 推高该动作概率，为负 → 压低。不加约束地最大化 $L^{CPI}$ 同样会一步迈太大，PPO 把它改成（式 7，$\epsilon$ 典型取 0.2）：
 
-$$L^{CLIP}(\theta) = \hat{\mathbb{E}}_t\Big[\min\big(r_t(\theta)\hat{A}_t,\ \ \mathrm{clip}(r_t(\theta),\, 1-\epsilon,\, 1+\epsilon)\,\hat{A}_t\big)\Big]$$
+$$L^{CLIP}(\theta) = \hat{\mathbb{E}}_t\Big[\min\big(r_t(\theta)\hat{A}_t,\ \ \mathrm{clip}(r_t(\theta),\, 1-\epsilon,\, 1+\epsilon)\,\hat{A}_t\big)\Big] \tag{式 7}$$
 
 min 取「未截断」与「截断」两者中**较差**者，使整体成为未截断目标的**下界（悲观界）**。语义可以一句话读完（[[ppo-paper]] §3）：**比率越界只有在让目标变好时才被截掉（去掉继续移动的激励），让目标变差时保留（梯度照常往回拉）**。在 $\theta_{old}$ 处两者一阶等价，$\theta$ 离开 $\theta_{old}$ 后才分歧。
 
@@ -62,7 +62,7 @@ min 取「未截断」与「截断」两者中**较差**者，使整体成为未
 
 实践中优势用学出来的值函数 $V(s)$ 做方差缩减（见 §3.2），策略与值函数常共享网络参数（TRPO 做不到、PPO 可以——这是 §1 的卖点之一），因此对**组合目标**做上升（式 9）：
 
-$$L_t^{CLIP+VF+S}(\theta) = \hat{\mathbb{E}}_t\big[L_t^{CLIP}(\theta) - c_1 L_t^{VF}(\theta) + c_2 S[\pi_\theta](s_t)\big]$$
+$$L_t^{CLIP+VF+S}(\theta) = \hat{\mathbb{E}}_t\big[L_t^{CLIP}(\theta) - c_1 L_t^{VF}(\theta) + c_2 S[\pi_\theta](s_t)\big] \tag{式 9}$$
 
 $L_t^{VF}$ 是值函数的平方误差 $(V_\theta(s_t) - V_t^{targ})^2$；$S$ 是**熵奖励**（entropy bonus，对动作分布熵的加项，分布越「不确定」奖励越高——防止策略过早塌缩到确定性输出、保证探索），$c_1, c_2$ 为系数。这种「策略（Actor）+ 值函数（Critic）」双头的架构称 actor-critic。
 
@@ -70,11 +70,11 @@ $L_t^{VF}$ 是值函数的平方误差 $(V_\theta(s_t) - V_t^{targ})^2$；$S$ �
 
 PPO 按固定长度 $T$ 的轨迹段采样（$T$ 远小于整条回合），优势估计不能看超出 $T$ 的未来。用的是**截断版 GAE**（Generalized Advantage Estimation，广义优势估计——Schulman et al. 2015 提出的优势估计器，用 $\lambda$ 在「偏差」与「方差」间插值；[[ppo-paper]] 引 [Sch+15a]）。先定义 TD 残差（式 12）：
 
-$$\delta_t = r_t + \gamma V(s_{t+1}) - V(s_t)$$
+$$\delta_t = r_t + \gamma V(s_{t+1}) - V(s_t) \tag{式 12}$$
 
 （$\gamma$ 为折扣因子。）截断 GAE 把一段内的残差按 $(\gamma\lambda)^l$ 衰减加权（式 11，按原文意图整理为标准求和式）：
 
-$$\hat{A}_t = \sum_{l=t}^{T-1} (\gamma\lambda)^{\,l-t}\,\delta_{l} \;\;=\;\; \delta_t + (\gamma\lambda)\,\delta_{t+1} + \cdots + (\gamma\lambda)^{T-1-t}\,\delta_{T-1}$$
+$$\hat{A}_t = \sum_{l=t}^{T-1} (\gamma\lambda)^{\,l-t}\,\delta_{l} \;\;=\;\; \delta_t + (\gamma\lambda)\,\delta_{t+1} + \cdots + (\gamma\lambda)^{T-1-t}\,\delta_{T-1} \tag{式 11（修正）}$$
 
 > **排印笔误注记**：原文式 11 末项印作 $(\gamma\lambda)^{T-t+1}\delta_{T-1}$、式 10 同位印作 $\gamma^{T-t+1}r_{T-1}$，与逐项指标矛盾——首项 $\delta_t$ 指数为 0、$\delta_{t+1}$ 为 1，则 $\delta_{T-1}$ 应为 $T-1-t$。独立验证：令 $\lambda=1$ 展开求和，$\sum_{l=t}^{T-1}\gamma^{l-t}\delta_l$ 中的值函数项逐级递缩相消，恰余 $-V(s_t) + \sum_{l=t}^{T-1}\gamma^{l-t}r_l + \gamma^{T-t}V(s_T)$，与式 10（修正后）的有限时域估计**严格一致**——原文指数差了 2，判为排印笔误。本页按修正后的标准式照录。
 
@@ -94,7 +94,11 @@ MuJoCo 主基准的超参（[[ppo-paper]] Table 3）：T=2048、K=10 epochs、mi
 
 ## 4. 变体：自适应 KL 惩罚（§4）
 
-截断之外的正统替代：目标加 KL 惩罚项（式 8）$L^{KLPEN} = \hat{\mathbb{E}}_t\big[r_t\hat{A}_t - \beta\,\mathrm{KL}[\pi_{\theta_{old}}(\cdot|s_t), \pi_\theta(\cdot|s_t)]\big]$，并把 $\beta$ **自适应化**——每轮算 $\hat{\mathbb{E}}_t[\mathrm{KL}]$，与目标值 $d_{targ}$ 比较：低于 $d_{targ}/1.5$ 则 $\beta \leftarrow \beta/2$、高于 $1.5\,d_{targ}$ 则 $\beta \leftarrow 2\beta$（乘性调整，1.5 / 2 为启发式、不敏感；[[ppo-paper]] §4）。实验结论：KL 惩罚版**劣于** clip 版（见 §5 消融），论文保留它作为重要 baseline。后续路线里 [[grpo]] 把 KL 惩罚项直接放进目标（固定系数），正是这一支的延续。
+截断之外的正统替代：目标加 KL 惩罚项（式 8）：
+
+$$L^{KLPEN}(\theta) = \hat{\mathbb{E}}_t\big[r_t(\theta)\hat{A}_t - \beta\,\mathrm{KL}\big[\pi_{\theta_{old}}(\cdot|s_t), \pi_\theta(\cdot|s_t)\big]\big] \tag{式 8}$$
+
+并把 $\beta$ **自适应化**——每轮算 $\hat{\mathbb{E}}_t[\mathrm{KL}]$，与目标值 $d_{targ}$ 比较：低于 $d_{targ}/1.5$ 则 $\beta \leftarrow \beta/2$、高于 $1.5\,d_{targ}$ 则 $\beta \leftarrow 2\beta$（乘性调整，1.5 / 2 为启发式、不敏感；[[ppo-paper]] §4）。实验结论：KL 惩罚版**劣于** clip 版（见 §5 消融），论文保留它作为重要 baseline。后续路线里 [[grpo]] 把 KL 惩罚项直接放进目标（固定系数），正是这一支的延续。
 
 ## 5. 实验证据（§6）
 

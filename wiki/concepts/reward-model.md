@@ -36,7 +36,7 @@ sources: 5
 
 **Bradley-Terry 模型**（Bradley & Terry, 1952）：每个候选回答有一个标量强度分，$y^+$ 优于 $y^-$ 的概率只由分差过 sigmoid 给出，训练目标取观测偏好的负对数似然——RLHF 奖励建模的标配损失（[[dpo-paper]] 式 1–2）：
 
-$$P(y^+ \succ y^- \mid x) = \sigma\!\big(s^+ - s^-\big) \quad\Rightarrow\quad \mathcal{L} = -\log \sigma\!\big(s^+ - s^-\big), \qquad s^\pm = r_\theta(x, y^\pm)$$
+$$P(y^+ \succ y^- \mid x) = \sigma\!\big(s^+ - s^-\big) \quad\Rightarrow\quad \mathcal{L} = -\log \sigma\!\big(s^+ - s^-\big), \qquad s^\pm = r_\theta(x, y^\pm) \tag{式 1}$$
 
 InstructGPT 的 6B RM 即用此损失（[[instructgpt-paper]] §3.5 式 1，除以 $\binom{K}{2}$ 作归一化），并配两个工程细节：①标注员一次给 K=4–9 个输出排序、展开出全部 $\binom{K}{2}$ 偏好对，这些对**高度相关**——拆成独立样本训则单 epoch 即过拟合，InstructGPT 把同一 prompt 的所有对打包成**单个 batch 元素**（顺带把每回答的前向次数从 $\binom{K}{2}$ 降到 1）；②训练前用 bias 把示范数据均分归 0 后再做 RL——损失平移不变、绝对分无锚，必须人为定一个零点（§4.3 推论 1 的直接应用）。
 
