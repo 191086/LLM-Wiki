@@ -188,3 +188,21 @@ updated: 2026-09-15
 
 按用户四条要求清理 AGENTS.md：①删除头部「模式来源（Karpathy LLM Wiki）」行；②全文去除具体日期（概念页 / 实体页标题、自查清单、用户偏好、Obsidian 设置各处）；③模板改为 Obsidian 引用式链接（[[templates/source|source]] 等）；④不再锚定具体 wiki 页面——删 [[bpe-tokenization]] 范例链接（改为「从库中挑最成熟概念页作参考」的准则表述）、删分析页「来自 [[pretokenization-cjk-and-mixed-text]] 的实践」出处。规范层从此与具体库内容解耦，日期与出处只留在 log
 - 续（同日）：按用户要求把写作准则收拢到「页面模板」小节末尾的统一「写作原则」（七条，全页型生效）；概念页小节只留自查清单，实体页「写作要点」、概念页「写作原则」并入统一块，四页型小节各留一句定位
+
+## [2026-09-15] ingest | Direct Preference Optimization（DPO 论文，arXiv:2305.18290）
+
+- raw/ 收录 Direct Preference Optimization.pdf，按库内惯例入库前改短名 DPO.pdf；docling 全文转换 + PDF 原页视觉核验全部公式（docling 对本篇公式全丢，式 1–7 与梯度式逐条对图校验）
+- 新建 [[dpo-paper]] 来源页：三阶段 RLHF 预备（式 1–3）、重参数化推导（式 4–7）、梯度动态加权、§5 理论（等价类 / Theorem 1 / PPO 不稳诊断）、三任务实验与人类研究、附录 B 实现默认值（β=0.1、RMSprop 1e-6）；嵌 Figure 2
+- 重写 [[dpo]] 概念页：撤销「wiki 外知识」标注、逐式锚定原文；新增 §4 梯度一节（手工走查：排错加权 σ(0.05)=0.513 vs 排对 σ(−0.4)=0.401，本机复算）与 §6 实验证据；嵌 Figure 1；失败模式显式标注为 wiki 外后续文献
+- 新建 [[rlhf]] 概念页（此前全库引用 RLHF 却无独立页面）：三阶段管线、形化奖励走查（E_π[shaped] = E[r_φ] − βKL 严格相等 0.928，本机复算；逐样本符号可反向）、难训四因、PPO/DPO/MPO/GRPO 路线谱系表
+- 更新关联页：[[reward-model]]（BT 损失锚定式 1–2、隐式 RM 锚定 §5.1、来源 3→4）；[[mixed-preference-optimization]]（偏好项改库内来源，BCO 仍 wiki 外，来源 3→4）；[[grpo]]（KL 惩罚与 RLHF 同源，来源 1→2）；[[rule-based-reward]]（RLHF/DPO 接线）
+- 登记：overview（来源 5→6、「偏好对齐的理论基底」入主线二、关键结论 +2、开放问题 +1）；index（新来源行、rlhf 新页行、dpo 摘要刷新）；图 2 张按需入 raw/assets（dpo-fig1 管线对比、dpo-fig2 前沿与胜率）
+
+## [2026-09-16] ingest | Training LMs to Follow Instructions with Human Feedback（InstructGPT 论文，arXiv:2203.02155v1）
+
+- raw/ 收录论文全文 PDF（68 页，arXiv v1，2022-03-04），入库前按惯例改短名 instructgpt.pdf；docling 全文转换（公式未解码，式 1 RM 损失与式 2 PPO-ptx 目标经 PDF 原页渲染视觉核验）；收录注记：v1 图号与广泛引用的 v2 不同（v1 Figure 2 = 三步管线图），且无 v2 的 RM scaling 分析
+- 新建 [[instructgpt-paper]] 来源页：3H 对齐操作化、三步方法与数据规模（SFT 13k / RM 33k / PPO 31k prompt，K=4–9 排序展开 C(K,2) 对）、标注员 40 人与人-人一致率 72.6%、SFT 按 RM 分选模、6B RM 与整提示打包训练、bias 归一化、PPO 逐 token KL（β=0.02）与 PPO-ptx（γ=27.8）、主结果（1.3B>175B、85±3%）、FLAN/T0 对照（真实使用分布 ≠ 公共基准）、真实性/毒性/偏见、对齐税、成本账 ≈2%；嵌 Figure 1 胜率图
+- 新建 [[instructgpt]] 实体页（模型本体：三档规模、配方速览表、代表性数字、部署形态；「ChatGPT 前身」按规范标注为 wiki 外补注 + 候选来源）
+- 重写 [[rlhf]] 概念页：主锚从 [[dpo-paper]] 二手引文升级为 [[instructgpt-paper]] 一手来源——定义行重写、§1 补 misaligned/3H 框架、§2 管线补 InstructGPT 工程细节（RM 分选模、6B RM 选型、式 1 与打包训练、逐 token KL、PPO-ptx）、新增 §3 实证节（小模型赢大模型、held-out 标注员泛化、真实性/毒性/偏见、对齐税、成本账、泛化边界）；形化奖励走查原样保留（0.928 期望恒等本机复核一致）并补值函数初始化锚点；难训四因补 175B RM 不稳定实例；路线谱系表与各节编号保持（dpo.md 的 [[rlhf]] §2 入链不断）；来源 2→3；嵌管线图与 held-out 胜率图
+- 更新 [[reward-model]]：§4.1 补 InstructGPT 式 1 锚定 + 整提示打包 + bias 归一化（平移不变的规范化应用，§4.3 推论 1 同步补引）；§5 补 RM 精度参照（72.4% / 69.6% vs 人-人 72.6%，上限被人类一致性封顶）；来源 4→5
+- 登记：overview（来源 6→7、主线二 +「RLHF 范式的一手锚点」、关键结论 +3、开放问题 +1）；index（新来源/实体行、rlhf 摘要刷新）；图 3 张按需入 raw/assets（instructgpt-rlhf-pipeline、instructgpt-winrate-vs-gpt3、instructgpt-winrate-heldout）

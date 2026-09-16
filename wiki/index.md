@@ -2,7 +2,7 @@
 type: index
 title: 索引
 created: 2026-09-12
-updated: 2026-09-15
+updated: 2026-09-16
 ---
 
 # 索引
@@ -20,6 +20,8 @@ updated: 2026-09-15
 - [[ostrakon-vl-paper|Ostrakon-VL（论文）]] — 餐饮零售领域多模态模型三件套：8B 模型反超 235B、数据压缩 20.4× 反升分（淘宝闪购，2026-01，arXiv）
 - [[skywork-vl-reward-paper|Skywork-VL Reward（论文）]] — 开源 7B 多模态奖励模型：判别式 ORM + 19 万对三阶段清洗偏好数据，VL-RewardBench 73.1% 超 GPT-4o（昆仑万维，2025-05，arXiv）
 - [[vision-r1-paper|Vision-R1（论文）]] — 免 RM 的视觉规则强化学习：三路准则奖励 + 渐进收紧 + GRPO，Qwen2.5-VL-7B 定位 mAP +50%、ODINW-13 反超 72B（CASIA，2025-03，arXiv）
+- [[dpo-paper|DPO（论文）]] — RLHF 两阶段折叠为单个偏好损失：奖励 = β·log(π/π_ref) 重参数化（闭式解 + 配分函数相消），reward-KL 前沿严格支配 PPO、TL;DR 胜率 61% vs 57%（Stanford，2023-05，arXiv:2305.18290 / NeurIPS 2023）
+- [[instructgpt-paper|InstructGPT（论文）]] — RLHF 三阶段定标之作：SFT → 6B RM → PPO-ptx 对齐 GPT-3，1.3B 胜 175B GPT-3（175B vs 175B 胜率 85±3%）、闭域幻觉减半、PPO-ptx 缴对齐税；对齐算力 ≈ 预训练 2%（OpenAI，2022-03，arXiv:2203.02155v1）
 
 ## 实体（entities/）
 
@@ -32,6 +34,7 @@ updated: 2026-09-15
 - [[shopbench|ShopBench（基准）]] — 首个餐饮零售多模态基准：5,818 题 / L1-L4 / 单图·多图·视频；VNR/VIF 指标
 - [[skywork-vl-reward|Skywork-VL-Reward（奖励模型）]] — 昆仑万维开源 7B 多模态奖励模型（Qwen2.5-VL-7B 基座）；QUAD/OCL 统一打分器，原样取用未做领域适配
 - [[vision-r1|Vision-R1（方法）]] — CASIA 的视觉规则 RL 方法（Griffon-G / Qwen2.5-VL 双基座）：准则驱动奖励 + 渐进式规则收紧 + 一条样本奖励走查，human-free alignment
+- [[instructgpt|InstructGPT（模型）]] — OpenAI 用 RLHF 对齐的 GPT-3 微调版（1.3B/6B/175B，默认 PPO-ptx）：RLHF 范式的定标实证载体，ChatGPT 前身
 
 ## 概念（concepts/）
 
@@ -41,7 +44,8 @@ updated: 2026-09-15
 - [[vocabulary-expansion|词表扩展]] — 训后追加 token：add_merges 端到端走查（六条新 merge 逐轮还原）、预切分/码点/优先级三坑与官方流程
 - [[quad-data-curation|QUAD（数据清洗管线）]] — 四阶段蒸馏 69.25M→3.40M（20.4×）反升 2.5 分；质量 > 数量
 - [[mixed-preference-optimization|MPO（混合偏好优化）]] — DPO+BCO+SFT 三项损失落到公式与数值对比走查；离线偏好对齐、偏好对构造与 GRPO 取舍
-- [[dpo|DPO（直接偏好优化）]] — RLHF 两阶段折叠为单个偏好损失：奖励可从策略/参考模型 log 概率比恢复（重参数化推导）；机制为 wiki 外知识标注
+- [[rlhf|RLHF（人类反馈强化学习）]] — 三阶段管线（SFT→RM→KL 约束 RL），InstructGPT 一手锚定：形化奖励期望恒等式走查（逐样本符号 ≠ 期望含义）、1.3B>175B 实证与对齐税、难训四因、PPO/DPO/MPO/GRPO 四路线谱系
+- [[dpo|DPO（直接偏好优化）]] — RLHF 两阶段折叠为单个偏好损失：重参数化推导（式 4–7）+ 梯度动态加权走查（排错加权 0.513 vs 排对 0.401）；β 与 π_ref 性质、隐式 RM、实验证据
 - [[reward-model|奖励模型]] — RM 两轴分类（判别/生成/隐式 × ORM/PRM）；BT 排序损失数值走查：只学相对序的后果与用途；规则奖励是其系外成员
 - [[grpo|GRPO（组相对策略优化）]] — 无 critic 的 RL：组内相对优势当基线，R1 式训练底座；组内分化决定信号强弱，在线组采样是代价
 - [[rule-based-reward|规则奖励]] — 免 RM / 免偏好标注的评价信号：格式 + 召回 + 精度三路程序化打分；reward hacking 与渐进收紧对策；与学习式 RM 对照
