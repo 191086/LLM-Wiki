@@ -18,7 +18,7 @@ raw: raw/DPO.pdf
 
 ## 一句话总结
 
-证明 RLHF 的「KL 约束奖励最大化」目标有闭式最优解，据此把奖励重参数化为策略与参考模型的对数概率比（$r = \beta \log \frac{\pi}{\pi_\text{ref}}$）——代回 Bradley-Terry 偏好模型时配分函数相消，于是「训 RM + 跑 PPO」两阶段折叠成一个对 $\pi_\theta$ 直接可微的二元交叉熵损失（DPO），在不采样、不调 RL 超参的条件下达到或超过 PPO-based RLHF。
+证明 RLHF 的「KL 约束奖励最大化」目标有闭式最优解，据此把奖励重参数化为策略与参考模型的对数概率比（$r = \beta \log \frac{\pi}{\pi_\text{ref}}$）——代回 Bradley-Terry 偏好模型时配分函数相消，于是「训 RM + 跑 [[ppo|PPO]]」两阶段折叠成一个对 $\pi_\theta$ 直接可微的二元交叉熵损失（DPO），在不采样、不调 RL 超参的条件下达到或超过 PPO-based RLHF。
 
 ## 关键要点
 
@@ -42,4 +42,4 @@ raw: raw/DPO.pdf
 - [[dpo]]（算法本体：完整推导、数值与梯度走查、关键性质）
 - [[reward-model]]（BT 损失与 RM 分类学——本文式 1–3 是其理论起点；隐式 RM 分类项即本文标题）
 - [[rlhf]]（三阶段管线：本文 §3 的预备综述对象）
-- [[mixed-preference-optimization]]（DPO 作为偏好项的实战用法）｜ [[grpo]]（在线 RL 路线对照：式 3 的 KL 约束同源）
+- [[mixed-preference-optimization]]（DPO 作为偏好项的实战用法）｜ [[grpo]]（在线 RL 路线对照：式 3 的 KL 约束同源）｜ [[ppo]]（被对照的在线 RL 基线本体）

@@ -16,7 +16,7 @@ sources: 2
 
 ## 1. 要解决的问题
 
-PPO 需要一个与策略同规模的价值网络（critic）来估计基线，对 LLM / LVLM 而言显存与训练开销都很重，价值模型本身也难训好。GRPO 的观察：对答案客观可验证的任务（数学 / 代码 / 定位），监督只落在最终结果上，同一问题的 N 个采样**互相比较**即可提供基线——组就是 critic，且组内相对比较天然不需要人工偏好标注（[[vision-r1-paper]] §3.1）。
+[[ppo|PPO]] 需要一个与策略同规模的价值网络（critic）来估计基线，对 LLM / LVLM 而言显存与训练开销都很重，价值模型本身也难训好。GRPO 的观察：对答案客观可验证的任务（数学 / 代码 / 定位），监督只落在最终结果上，同一问题的 N 个采样**互相比较**即可提供基线——组就是 critic，且组内相对比较天然不需要人工偏好标注（[[vision-r1-paper]] §3.1）。
 
 ## 2. 机制
 
@@ -30,7 +30,7 @@ $$A_i = \frac{r_i - \mathrm{mean}(\{r_j\}_{j=1}^{N})}{\mathrm{std}(\{r_j\}_{j=1}
 
 $$\mathcal{J}_{GRPO}(\theta) = \frac{1}{N}\sum_{i=1}^{N}\left(\frac{\pi_\theta(o_i|q)}{\pi_{\theta_{old}}(o_i|q)} A_i - \beta\,\mathbb{KL}\big(\pi_\theta(o_i|q)\,\big\|\,\pi_{ref}(o_i|q)\big)\right)$$
 
-> **[wiki 外一般性知识]** 原始 GRPO 在比率项上还有 PPO 式 clip 截断，上式是 Vision-R1 引用的简化写法。候选来源：DeepSeekMath 论文（arXiv:2402.03300）。
+> **[wiki 外一般性知识]** 原始 GRPO 在比率项上还有 [[ppo]] 式 clip 截断（机制见 [[ppo]] §2），上式是 Vision-R1 引用的简化写法。候选来源：DeepSeekMath 论文（arXiv:2402.03300）。
 
 对冻结参考模型 $\pi_{ref}$ 的 KL 惩罚与经典 [[rlhf]] 的约束项同源（[[dpo-paper]] 式 3）——同一条「KL 约束奖励最大化」目标，PPO / GRPO 在线解它，[[dpo]] 用重参数化离线解它。
 
@@ -66,4 +66,4 @@ $$\mathcal{J}_{GRPO}(\theta) = \frac{1}{N}\sum_{i=1}^{N}\left(\frac{\pi_\theta(o
 
 ## 相关
 
-- [[rlhf]]（KL 约束目标的共同源头）｜ [[rule-based-reward]] ｜ [[reward-model]] ｜ [[mixed-preference-optimization]] ｜ [[vision-r1]] ｜ [[dpo]]
+- [[ppo]]（clip 与 KL 骨架的来源、critic 成本的对照面）｜ [[rlhf]]（KL 约束目标的共同源头）｜ [[rule-based-reward]] ｜ [[reward-model]] ｜ [[mixed-preference-optimization]] ｜ [[vision-r1]] ｜ [[dpo]]

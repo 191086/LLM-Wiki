@@ -16,7 +16,7 @@ sources: 3
 
 ## 1. 要解决什么问题：RLHF 的两阶段之痛
 
-经典 RLHF 三阶段（[[dpo-paper]] §3，机制详见 [[rlhf]] §2）：SFT → 训练 RM（Bradley-Terry 排序损失，见 [[reward-model]] §4）→ 用 RL（如 PPO）最大化 RM 打分、同时以 KL 惩罚拴住策略不跑远。痛点集中在第三阶段（[[dpo-paper]] §1）：在线采样成本高（训练回路里不断从 LM 采完成）、训练不稳（PPO 需要学值函数当 baseline，方差高，见 §5）、流程复杂（RM 与策略两套模型、两套优化器、RL 超参难调）。DPO 的问题是：能否不训显式 RM、不上 RL，直接用偏好对做监督学习？答案成立的前提是一个重参数化观察（§2）。
+经典 RLHF 三阶段（[[dpo-paper]] §3，机制详见 [[rlhf]] §2）：SFT → 训练 RM（Bradley-Terry 排序损失，见 [[reward-model]] §4）→ 用 RL（如 PPO）最大化 RM 打分、同时以 KL 惩罚拴住策略不跑远。痛点集中在第三阶段（[[dpo-paper]] §1）：在线采样成本高（训练回路里不断从 LM 采完成）、训练不稳（[[ppo|PPO]] 需要学值函数当 baseline，方差高，见 [[dpo-paper]] §5.2）、流程复杂（RM 与策略两套模型、两套优化器、RL 超参难调）。DPO 的问题是：能否不训显式 RM、不上 RL，直接用偏好对做监督学习？答案成立的前提是一个重参数化观察（§2）。
 
 ## 2. 重参数化：奖励藏在策略里
 
@@ -101,6 +101,7 @@ $$\nabla_\theta \mathcal{L}_\text{DPO} = -\beta\;\mathbb{E}\Big[\ \underbrace{\s
 ## 相关
 
 - [[rlhf]]（被折叠的两阶段管线本体）
+- [[ppo]]（被折叠 / 被对照的在线 RL 基线：clip 目标与值函数机制）
 - [[reward-model]]（BT 损失与 RM 分类学——DPO 推导的起点）
 - [[mixed-preference-optimization]]（DPO 作为组成项的实战用法）
 - [[grpo]]（在线 RL 路线的对照）

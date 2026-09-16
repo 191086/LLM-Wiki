@@ -30,7 +30,7 @@ GPT-3 的下一词预测目标与「听懂用户指令」错位（misaligned）�
 - **标注员与一致率**（§3.4）：约 40 名承包商（Upwork / ScaleAI），经筛选测试选拔、共享聊天室答疑；训练标注员互相一致率 **72.6±1.5%**，held-out 标注员 77.3±1.3%（对照 Stiennon et al. 2020 摘要任务的研究员一致率 73±4%）
 - **SFT 细节**（§3.5、C.1）：16 epochs、residual dropout 0.2、cosine LR；验证损失 1 epoch 后即过拟合，但训满 16 epochs 的模型 RM 分与人类偏好评分反而更高——模型选择按 **RM 分**而非验证损失
 - **RM 细节**（§3.5 式 1；C.2）：只用 **6B** RM——175B RM 训练不稳定、不适合作 PPO 值函数初始化，且算力代价大。损失为 Bradley-Terry 成对排序（式 1：$-\frac{1}{\binom{K}{2}}\mathbb{E}\big[\log\sigma(r_\theta(x,y_w)-r_\theta(x,y_l))\big]$）；两个关键工程：同一 prompt 的全部 $\binom{K}{2}$ 对打包成**单个 batch 元素**（各对高度相关，拆开则单 epoch 即过拟合；同时把每回答前向次数从 $\binom{K}{2}$ 降到 1）；训练前用 bias 把示范数据均分归 0（损失平移不变，需人为定锚，见 [[reward-model]] §4.3）
-- **PPO 细节**（§3.5 式 2；C.4）：bandit 环境（一句 prompt 采一条回答即终局结算）；**逐 token KL 惩罚**（相对 SFT 模型，β=0.02）缓解 RM 过度优化；值函数从 RM 初始化。**PPO-ptx** = 式 2 再加 γ·预训练对数似然（γ=27.8，预训练样本量 8× 于 RL episodes）以缴「对齐税」；本文 InstructGPT 默认指 PPO-ptx
+- **[[ppo|PPO]] 细节**（§3.5 式 2；C.4）：bandit 环境（一句 prompt 采一条回答即终局结算）；**逐 token KL 惩罚**（相对 SFT 模型，β=0.02）缓解 RM 过度优化；值函数从 RM 初始化。**PPO-ptx** = 式 2 再加 γ·预训练对数似然（γ=27.8，预训练样本量 8× 于 RL episodes）以缴「对齐税」；本文 InstructGPT 默认指 PPO-ptx
 - **主结果：小模型赢大模型**（§4.1，Figure 1/3）：1.3B InstructGPT 输出被偏好胜过 175B GPT-3；175B InstructGPT 对 175B GPT-3 胜率 **85±3%**、对 few-shot GPT-3 **71±4%**；方法阶梯 GPT < GPT(prompted) < SFT < PPO ≈ PPO-ptx 在三个规模一致；held-out 标注员给出同样偏好（不是过拟合训练标注员）；RM 5 折跨标注组精度 69.6±0.9%（组内 72.4±0.4%）
 - **公共 NLP 数据 ≠ 真实使用分布**（§4.1，Figure 5）：175B GPT-3 在 FLAN / T0++（各约 100 万例，按 RM 分选 checkpoint）微调后反而**不及 SFT 基线**；head-to-head InstructGPT 对 FLAN / T0 胜率 78±4% / 79±4%。原因：分类 + QA 只占 API 真实用量的约 18%，开放生成 + 头脑风暴占约 57%（Table 1），公共数据集覆盖不了后者
 - **真实性 ↑ 毒性 ↓ 偏见 ✗**（§4.2）：TruthfulQA 上真实且信息量大的回答约为 GPT-3 的 2×（给「不确定就说 I have no comment」指令后，PPO 模型宁可真实而无信息量，GPT-3 不然）；闭域任务幻觉率 21% vs GPT-3 41%；RealToxicityPrompts 在「尊重」指令下毒性输出 −25%（无指令则优势消失；**被明确要求有毒时比 GPT-3 更毒**——「听指令」本身是双刃剑，§5.3）；Winogender / CrowS-Pairs 偏见无改善
@@ -45,6 +45,7 @@ GPT-3 的下一词预测目标与「听懂用户指令」错位（misaligned）�
 ## 值得追踪的实体与概念
 
 - [[instructgpt]]（模型本体：三档规模、配方速览、部署形态）
+- [[ppo]]（第 3 阶段的 RL 算法本体：clip 替代目标、截断 GAE、完整算法——本文式 2 的 PPO-ptx 是其 LLM 工程变体）
 - [[rlhf]]（范式页：管线机制、形化奖励走查、PPO/DPO/MPO/GRPO 路线谱系——本文是其主锚来源）
 - [[reward-model]]（第 2 阶段的产物：BT 排序损失即本文式 1，平移不变性的工程应用）
 - [[dpo]]（后续工作：把本文第 2+3 阶段折叠为一个分类损失）｜ [[grpo]]（免 critic 的在线 RL 后续路线）

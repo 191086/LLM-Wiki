@@ -16,7 +16,7 @@ sources: 1
 
 ## 1. 是什么
 
-预训练 GPT-3（Brown et al., 2020）经三步微调的产物：SFT（标注员示范）→ 6B 奖励模型（偏好排序）→ PPO 对 RM 优化。论文中 InstructGPT 默认指 **PPO-ptx** 变体（PPO 之外再混预训练梯度，缓解公共 NLP 任务回退）；不带 ptx 的「PPO」变体在人类偏好上与 PPO-ptx 相当（[[instructgpt-paper]] §3.5、§4.1）。
+预训练 GPT-3（Brown et al., 2020）经三步微调的产物：SFT（标注员示范）→ 6B 奖励模型（偏好排序）→ [[ppo|PPO]] 对 RM 优化。论文中 InstructGPT 默认指 **PPO-ptx** 变体（PPO 之外再混预训练梯度，缓解公共 NLP 任务回退）；不带 ptx 的「PPO」变体在人类偏好上与 PPO-ptx 相当（[[instructgpt-paper]] §3.5、§4.1）。
 
 部署形态：训练数据来自 OpenAI API Playground 上早期 InstructGPT 版本（仅示范数据训练）收集的客户 prompt，成品又通过 Playground 对外提供（[[instructgpt-paper]] §3.2）。
 
@@ -28,7 +28,7 @@ sources: 1
 |---|---|---|
 | SFT | 1.3B/6B/175B | 16 epochs；按 RM 分选模型（验证损失 1 epoch 即过拟合） |
 | RM | 6B 一档 | BT 排序损失（式 1）；整 prompt 的 $\binom{K}{2}$ 对作单 batch 元素 |
-| PPO | 策略同 SFT 三档 | 逐 token KL 惩罚 β=0.02；值函数从 RM 初始化；PPO-ptx：γ=27.8 |
+| [[ppo|PPO]] | 策略同 SFT 三档 | 逐 token KL 惩罚 β=0.02；值函数从 RM 初始化；PPO-ptx：γ=27.8 |
 
 训练数据：SFT ~13k prompt、RM 33k、PPO 31k（Table 6）；标注团队约 40 人，训练标注员互相一致率 72.6±1.5%（§3.4）。
 
@@ -45,4 +45,4 @@ sources: 1
 
 ## 相关
 
-- [[rlhf]]（范式页：管线机制与路线谱系）｜ [[reward-model]]（第 2 阶段的 6B RM）｜ [[dpo]]（后续：折叠第 2+3 阶段）
+- [[rlhf]]（范式页：管线机制与路线谱系）｜ [[ppo]]（第 3 阶段 RL 引擎的机制页）｜ [[reward-model]]（第 2 阶段的 6B RM）｜ [[dpo]]（后续：折叠第 2+3 阶段）
