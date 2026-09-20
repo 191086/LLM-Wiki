@@ -2,7 +2,7 @@
 type: source
 title: TRPO：置信域策略优化（论文）
 created: 2026-09-16
-updated: 2026-09-16
+updated: 2026-09-20
 tags:
   - paper
   - reinforcement-learning
@@ -41,4 +41,5 @@ raw: raw/Trust Region Policy Optimization.pdf
 
 - [[trpo]]（概念页：理论骨架、α-coupling 证明思想、两轮手工走查、采样方案与 PPO 对照）
 - [[ppo]]（直接后继：置信域约束的一阶化）｜ [[ppo-paper]]（后继论文：截断替代目标）
+- [[gae-paper]]（同组下一站：把本文的 MC 回报优势估计升级为 GAE，置信域 + 共轭梯度机制复用于值函数训练；策略更新引擎即本文）｜ [[gae]]（概念页）
 - [[rlhf]]（应用谱系：PPO 成为对齐第 3 阶段的 RL 引擎，TRPO 是该引擎的理论前身）

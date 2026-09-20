@@ -2,12 +2,12 @@
 type: concept
 title: TRPO（置信域策略优化）
 created: 2026-09-16
-updated: 2026-09-16
+updated: 2026-09-20
 tags:
   - reinforcement-learning
   - policy-gradient
   - rlhf
-sources: 1
+sources: 2
 ---
 
 # TRPO（Trust Region Policy Optimization，置信域策略优化）
@@ -153,7 +153,7 @@ Theorem 1 直接实现不可行，TRPO 连做三次近似（§7 的三条自总�
 - **$\delta = 0.01$ 意外地通用**：全部实验（四任务 + 七游戏，Table 2 / Table 3）共用一个置信域半径，没有任何逐任务调参——「对超参不敏感」的最早实证，也是后来 PPO 声称 $\epsilon$ 稳健（0.1/0.2/0.3 全部 ≥0.70，[[ppo]] §5）的叙事先声
 - **vine 的可重置要求是硬门槛**：论文自己写明 vine 限于可重置仿真、single path 才能上实物——后继方法的实践全部落在 single path 一系（PPO 的 N 个并行 actor 各采 T 步即此形态，[[ppo-paper]] Algorithm 1）
 - **与参数共享不兼容**：Fisher 矩阵只对策略参数定义，策略 / 值函数共享底座的架构用不了——PPO 列为对 TRPO 的头号工程批评（[[ppo-paper]] §1，[[ppo]] §1）
-- **优势估计是 Monte-Carlo 折扣回报**：vine 每批 500–2500 个 $Q$ 值（Table 2）；后来同组的 GAE（截断优势估计器）才是 PPO 采用的估计方式（[[ppo]] §3.2）
+- **优势估计是 Monte-Carlo 折扣回报**：vine 每批 500–2500 个 $Q$ 值（Table 2）；后来同组的 [[gae|GAE]]（广义优势估计，[[gae-paper]]——其策略更新引擎正是本页的 TRPO，式 31）才是 PPO 采用的估计方式（[[ppo]] §3.2）
 - **理论忽略优势估计误差**：Theorem 1 假设 $A_\pi$ 精确已知；论文在 §7 明确此近似未处理（Kakade & Langford 的原始推导处理过）
 
 ## 8. 与 PPO 对照：置信域的一阶化（本 wiki 谱系的关键一站）
@@ -181,4 +181,4 @@ Theorem 1 直接实现不可行，TRPO 连做三次近似（§7 的三条自总�
 
 ## 相关
 
-- [[ppo]]（一阶化后继）｜ [[rlhf]]（应用范式）｜ [[grpo]]（去 critic 下游）｜ [[dpo]]（免 RL 下游）
+- [[ppo]]（一阶化后继）｜ [[gae]]（同组下一站：优势估计从 MC 回报升级为 GAE，置信域机制复用于值函数）｜ [[rlhf]]（应用范式）｜ [[grpo]]（去 critic 下游）｜ [[dpo]]（免 RL 下游）

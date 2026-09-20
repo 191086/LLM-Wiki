@@ -2,7 +2,7 @@
 type: source
 title: InstructGPT：用人类反馈训练语言模型跟随指令（论文）
 created: 2026-09-16
-updated: 2026-09-16
+updated: 2026-09-20
 tags:
   - paper
   - alignment
@@ -45,7 +45,7 @@ GPT-3 的下一词预测目标与「听懂用户指令」错位（misaligned）�
 ## 值得追踪的实体与概念
 
 - [[instructgpt]]（模型本体：三档规模、配方速览、部署形态）
-- [[ppo]]（第 3 阶段的 RL 算法本体：clip 替代目标、截断 GAE、完整算法——本文式 2 的 PPO-ptx 是其 LLM 工程变体）
+- [[ppo]]（第 3 阶段的 RL 算法本体：clip 替代目标、截断 GAE、完整算法——本文式 2 的 PPO-ptx 是其 LLM 工程变体）｜ [[gae]]（其优势估计器的机制页）
 - [[rlhf]]（范式页：管线机制、形化奖励走查、PPO/DPO/MPO/GRPO 路线谱系——本文是其主锚来源）
 - [[reward-model]]（第 2 阶段的产物：BT 排序损失即本文式 1，平移不变性的工程应用）
 - [[dpo]]（后续工作：把本文第 2+3 阶段折叠为一个分类损失）｜ [[grpo]]（免 critic 的在线 RL 后续路线）

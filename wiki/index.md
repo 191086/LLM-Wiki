@@ -2,7 +2,7 @@
 type: index
 title: 索引
 created: 2026-09-12
-updated: 2026-09-16
+updated: 2026-09-20
 ---
 
 # 索引
@@ -24,6 +24,7 @@ updated: 2026-09-16
 - [[instructgpt-paper|InstructGPT（论文）]] — RLHF 三阶段定标之作：SFT → 6B RM → PPO-ptx 对齐 GPT-3，1.3B 胜 175B GPT-3（175B vs 175B 胜率 85±3%）、闭域幻觉减半、PPO-ptx 缴对齐税；对齐算力 ≈ 预训练 2%（OpenAI，2022-03，arXiv:2203.02155v1）
 - [[ppo-paper|PPO（论文）]] — 一阶化置信域：截断概率比的悲观下界替代目标 + 多 epoch 复用采样；clip 消融 0.82 vs 无约束 −0.39，Atari 30 胜 / ACER 18 / A2C 1（OpenAI，2017-08，arXiv:1707.06347v2）
 - [[trpo-paper|TRPO（论文）]] — 置信域策略优化：替代目标 − KL 约束更新的单调改进下界（Theorem 1），自然梯度 / 策略迭代统一为特例；MuJoCo 四任务包揽前二、Atari 原始图像七局（Berkeley，ICML 2015，arXiv:1502.05477v5）
+- [[gae-paper|GAE（论文）]] — 广义优势估计：TD 残差的 $(\gamma\lambda)^l$ 折扣和，$\lambda$ 在偏差-方差间插值（λ=1 对任意 V 无偏）；值函数置信域训练 + TRPO 组合刷新 3D 双足/四足/起身纪录，实时等效 5.8 天（Berkeley，ICLR 2016，arXiv:1506.02438v6）
 - [[rope-paper|RoFormer（论文）]] — 旋转位置编码：把「内积只依赖相对位置差」解成均匀角速度旋转（式 11–16 函数方程），零参数、保范数、长程衰减、线性注意力兼容；WMT14 27.3→27.5、GLUE 三胜三负（QQP +15.2）、CAIL2019-SCM 1024 长文 66.07%（追一科技，2021-04 首版 / v5 2023-11，arXiv:2104.09864）
 
 ## 实体（entities/）
@@ -49,6 +50,7 @@ updated: 2026-09-16
 - [[mixed-preference-optimization|MPO（混合偏好优化）]] — DPO+BCO+SFT 三项损失落到公式与数值对比走查；离线偏好对齐、偏好对构造与 GRPO 取舍
 - [[ppo|PPO（近端策略优化）]] — clip 替代目标四分支走查、截断 GAE（式 10/11 原文排印笔误考订）、自适应 KL 变体与消融证据；RLHF 第 3 阶段的 RL 引擎、GRPO / DPO 的共同对照
 - [[trpo|TRPO（置信域策略优化）]] — KL 置信域更新 + 单调改进下界：性能差分解、α-coupling 证明思想与 2 状态 MDP 数值走查（式 1 严格相等、下界松弛 ~13、理论惩罚系数 39,600 不可用）、single path / vine 采样、共轭梯度实现；PPO 一阶化的前身
+- [[gae|GAE（广义优势估计）]] — γ-just 框架与式 16 推导、γ/λ 不对称分工（λ<1 的偏差只源于 V 误差）；λ 偏差插值数值走查（V 低估 20% → λ=0 信号打八折、λ=1 严格无偏、方差随 λ 单调涨）；塑形视角；PPO 截断 GAE 的本尊、GRPO 去 critic 论证的第三角
 - [[rlhf|RLHF（人类反馈强化学习）]] — 三阶段管线（SFT→RM→KL 约束 RL），InstructGPT 一手锚定：形化奖励期望恒等式走查（逐样本符号 ≠ 期望含义）、1.3B>175B 实证与对齐税、难训四因、PPO/DPO/MPO/GRPO 四路线谱系
 - [[dpo|DPO（直接偏好优化）]] — RLHF 两阶段折叠为单个偏好损失：重参数化推导（式 4–7）+ 梯度动态加权走查（排错加权 0.513 vs 排对 0.401）；β 与 π_ref 性质、隐式 RM、实验证据
 - [[reward-model|奖励模型]] — RM 两轴分类（判别/生成/隐式 × ORM/PRM）；BT 排序损失数值走查：只学相对序的后果与用途；规则奖励是其系外成员

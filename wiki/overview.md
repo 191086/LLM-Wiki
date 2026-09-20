@@ -2,15 +2,15 @@
 type: overview
 title: 总览
 created: 2026-09-12
-updated: 2026-09-16
-sources: 10
+updated: 2026-09-20
+sources: 11
 ---
 
 # 总览
 
 > 本页是全局综合页，反映「读过的所有来源叠加之后」的整体理解。每次 ingest 后更新。
 
-**当前状态**：已收录 10 份来源，三条主线：**LLM 分词（tokenization）**（算法与训练优化、工业实现）、**多模态大模型的领域化与后训练**（数据管线、训练策略、奖励模型、免 RM 强化学习、领域评测，以 Ostrakon-VL 与 Vision-R1 为两个样本）与 **Transformer 架构与长上下文**（位置编码，[[rope-paper]] 为首个锚点），并沉淀了一份中文场景的实验分析；后训练部分已四重锚定：范式原文 [[instructgpt-paper]]（RLHF 三阶段）、RL 引擎原文 [[ppo-paper]]（截断替代目标）、引擎理论前身 [[trpo-paper]]（置信域单调改进）+ 理论折叠 [[dpo-paper]]（偏好优化）。
+**当前状态**：已收录 11 份来源，三条主线：**LLM 分词（tokenization）**（算法与训练优化、工业实现）、**多模态大模型的领域化与后训练**（数据管线、训练策略、奖励模型、免 RM 强化学习、领域评测，以 Ostrakon-VL 与 Vision-R1 为两个样本）与 **Transformer 架构与长上下文**（位置编码，[[rope-paper]] 为首个锚点），并沉淀了一份中文场景的实验分析；后训练部分已五重锚定：范式原文 [[instructgpt-paper]]（RLHF 三阶段）、RL 引擎原文 [[ppo-paper]]（截断替代目标）、引擎理论前身 [[trpo-paper]]（置信域单调改进）、优势估计原文 [[gae-paper]]（GAE 偏差-方差插值）+ 理论折叠 [[dpo-paper]]（偏好优化）。
 
 ## 当前主线
 
@@ -31,6 +31,7 @@ sources: 10
 - **RLHF 范式的一手锚点（2026-09-16 新增）**：[[instructgpt-paper]] 三阶段管线（SFT → 6B RM → PPO-ptx）把 GPT-3 对齐成 [[instructgpt]]——1.3B 对齐模型在人类偏好上净胜 175B GPT-3（175B 对 175B 胜率 85±3%），对齐算力仅预训练的约 2%；[[rlhf]] 页由二手综述升级为一手锚定，「公共 NLP 基准覆盖不了真实使用分布」的证据也出自此文
 - **RLHF 的 RL 引擎本尊（2026-09-16 新增）**：[[ppo-paper]] 把 TRPO 的置信域思想化成一阶可实现的截断替代目标 $L^{CLIP}$——越界的概率比只在「让目标变好」时被截掉，同一批采样数据由此可安全复用 K=10 epochs（机制走查见 [[ppo]] §2）；InstructGPT 第 3 阶段跑的正是它的 LLM 工程变体（PPO-ptx），[[grpo]] 去 critic、[[dpo]] 免 RL 两条后续路线皆以它为共同基线
 - **RL 引擎的理论前身（2026-09-16 新增）**：[[trpo-paper]] 证明「替代目标 − KL 置信域」更新的单调改进下界（Theorem 1：$\eta \ge L - C\,D_{KL}^{\max}$），并把自然梯度与策略迭代统一为该更新的特例；[[ppo-paper]] 把它的二阶求解一阶化为 clip 目标——TRPO → PPO → GRPO/DPO 的引擎谱系在库内闭环（下界走查与 PPO 对照见 [[trpo]] §4、§8）
+- **RL 引擎的优势信号源（2026-09-20 新增）**：[[gae-paper]] 把「用值函数降方差、付出可控偏差」变成两个旋钮——GAE$(\gamma,\lambda)$ = TD 残差的 $(\gamma\lambda)^l$ 折扣和；$\lambda=1$ 对任意值函数无偏（score 零均值使 baseline 不偏差）、$\lambda<1$ 的偏差只源于值函数误差且随 $\lambda\to1$ 消失，实验最优值居中（cart-pole $\lambda\in[0.92,0.99]$，$\lambda=0$ 与 No VF 均更差）；PPO 的截断 GAE（[[ppo]] §3.2）即其固定时域版，[[grpo]] 的组均值是「连 V 也不学」的第三角（数值走查见 [[gae]] §5、§9）
 - **偏好对齐的理论基底（2026-09-15 新增）**：[[rlhf]] 三阶段管线的 KL 约束奖励最大化目标有闭式最优解，奖励可重参数化为策略 / 参考模型的 log 概率比——两阶段折叠为单个分类损失（[[dpo]]，[[dpo-paper]]）；实验上 reward-KL 前沿严格支配 PPO（含真奖励版）、TL;DR GPT-4 胜率 61% vs 57%。此前收录的 MPO 偏好项、隐式 RM 分类、在线 / 离线路线对照由此落到同一理论源头
 
 ### 主线三：Transformer 架构与长上下文（2026-09-16 新增）
@@ -61,6 +62,7 @@ sources: 10
 - **clip 悲观下界是「多 epoch 复用采样」的钥匙**：朴素策略梯度目标经不起同批数据多步更新——无 clip 无惩罚在 7 个 MuJoCo 任务上均分 −0.39（half cheetah 崩到差于随机策略）；截断让「变好的越界」失去梯度激励，clip（ε=0.2）拿 0.82 且对 ε 稳健，胜过自适应 / 固定 KL 惩罚两变体（最好 0.74 / 0.72）（[[ppo-paper]] §6.1 Table 1，机制走查见 [[ppo]] §2）
 - **PPO 的胜出是工程性胜出**：MuJoCo 上胜 TRPO / CEM / A2C 几乎全部环境、Atari 49 游戏全程奖励 30 胜（ACER 18 / A2C 1），而实现只需在 vanilla policy gradient 上改几行、且兼容策略–值函数共享参数（TRPO 不行）——「简单、通用、稳」三角的定标样本，两年后成为 RLHF 的 RL 引擎（[[ppo-paper]] §6–7）
 - **单调改进下界成立，但理论惩罚系数不可用**：Theorem 1 的常数 $C = 4\epsilon\gamma/(1-\gamma)^2$ 在 $\gamma=0.99$、$\epsilon=1$ 时高达 39,600，$\alpha=0.05$ 的极小步长也要吃 99 的惩罚——任何有意义更新都被罚没；TRPO 因此改硬约束（$\delta=0.01$ 全实验通用）+ 共轭梯度求解，PPO 再把约束一阶化成 clip（[[trpo-paper]] 式 8–11；2 状态 MDP 数值走查见 [[trpo]] §4：式 1 分解严格相等、替代目标高估 0.0372、下界松弛 ~13）
+- **优势估计的偏差-方差权衡可参数化，且中间值最优**：GAE 以 $\gamma,\lambda$ 双参数插值「单步 TD（低方差、V 不准则偏）」与「MC 回报 − baseline（任意 V 无偏、高方差）」——数值走查显示 $\lambda=0$ 的偏差恰等于 V 的低估比例、$\lambda=1$ 在 V 错 20% 时仍严格无偏（[[gae]] §5），$\gamma\times\lambda$ 网格扫描最优落在中间带（[[gae-paper]] §6.3）；最优 $\lambda$（0.92–0.99）远低于最优 $\gamma$（0.96–0.995），因为 $\lambda$ 的偏差只源于 V 误差、$\gamma<1$ 则无条件偏差
 - **位置编码是函数方程的解而非设计选择**：「内积只含 $m-n$」+ 空位初始条件在二维下强迫出均匀角速度旋转（唯一自由度 $\theta$）；正交性恒等式 $\boldsymbol{R}_m^\top\boldsymbol{R}_n = \boldsymbol{R}_{n-m}$ 让「加法注入 + 改展开式」的五族方案收拢为一行乘法，顺带拿到零参数、保范数与线性注意力兼容（[[rope-paper]] 式 11–16、式 19；推导见 [[rope]] §3）
 - **真实使用分布 ≠ 公共基准分布（RLHF 侧证据）**：GPT-3 在 FLAN/T0 上微调后反不及 SFT 基线（InstructGPT 胜率 73.4% vs 26.8%/29.8%）——分类+QA 只占 API 真实用量约 18%，生成+头脑风暴占 57%；与领域化主线（[[domain-specific-mllm]]）互为印证（[[instructgpt-paper]] §4.1）
 
@@ -78,6 +80,7 @@ sources: 10
 - InstructGPT 偏好信号的质量上限：训练标注员人-人一致率 72.6%，6B RM 预测精度 72.4%（跨标注组 69.6%）——RM 精度如何随 RM 规模与偏好数据量缩放，v1 论文未给曲线；候选来源：Stiennon et al. 2020、arXiv:2203.02155 v2（补了 RM scaling 分析）（[[instructgpt-paper]]）
 - PPO 原文是 2017 年中小规模 RL 基准（MuJoCo / Atari）的产物；搬到 LLM 后的工程变体与原版的偏差——逐 token KL 的实现位置、优势归一化、值函数初始化等实现细节——库内未锚定（[[ppo]] §6 的 wiki 外注记）；候选来源：Engstrom et al. 2020（arXiv:2005.12729）、Huang et al. 2022《The 37 Implementation Details of PPO》
 - TRPO 与 PPO 缺同基准同条件的头对头消融：两篇论文各自出学习曲线（TRPO 的对手是自己的消融变体，PPO 的对手里 TRPO 无统一表格数字）——「显式 KL 约束 + 共轭梯度」与「clip 悲观下界」在同一现代基准上的严格对照仍需外部复现研究；候选来源：Engstrom et al. 2020（arXiv:2005.12729，同一代码库同时实现两者）
+- GAE 论文自陈两个开放问题（§7）：$\gamma,\lambda$ 能否自适应 / 自动调整；值函数估计误差与策略梯度误差的关系（值函数拟合该用什么误差度量——Bellman error 候选）。另：bandit 设定下 GAE 退化为「奖励 − V」、时序机制不激活（[[gae]] §9），LLM 侧值函数（critic）的成本正是 [[grpo]] 去 critic 路线的动机——「学 V 用 GAE」与「组均值免 V」两条路线的对照实验库内未锚定
 - RoPE 为何比加式位置编码收敛更快：论文自陈未解（[[rope-paper]] §4.5.5）；候选线索：苏剑林科学空间博客 RoPE 系列、后续分析文献
 - RoPE 训练长度外的外推退化与修正族（Position Interpolation / NTK-aware / YaRN / LongRoPE）库内未锚定——长程衰减 ≠ 有效外推，高频子空间未见相位组合的失效机制待一手来源；候选来源见 [[rope]] §6
 
@@ -93,3 +96,4 @@ sources: 10
 - [[ppo-paper]]
 - [[trpo-paper]]
 - [[rope-paper]]
+- [[gae-paper]]

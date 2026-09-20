@@ -2,7 +2,7 @@
 type: log
 title: 日志
 created: 2026-09-12
-updated: 2026-09-16
+updated: 2026-09-20
 ---
 
 # 日志
@@ -253,3 +253,11 @@ updated: 2026-09-16
 - 规范沉淀：AGENTS.md 写作原则新增「**公式编号锚定**」条（被编号引用的行间公式必须带 `\tag`、编号用原论文公式号、修正/变体在 tag 内注明、行内高频引用提为行间块、sources 页须有内容锚点）；templates/concept.md、templates/source.md 加对应提示
 - 校验：脚本扫全部概念页 `\tag` 与「式 N / Eq.N」引用的对应关系——残留「无 tag 引用」逐条确认为三类合法去向（他页已带 tag 的块 / 同页行内已给式 / 来源页锚点），无孤立 tag；[[rlhf]] 达到页内引用全可就地解析
 - 触及 14 文件：8 概念页 + 2 来源页 + AGENTS.md + 2 模板 + 本 log；raw/ 未动
+
+## [2026-09-20] ingest | High-Dimensional Continuous Control Using Generalized Advantage Estimation（GAE 论文，arXiv:1506.02438v6）
+
+- raw/ 收录 arXiv HTML 裁剪版（Web Clipper，公式号在转换中全部丢失），公式号按 v6 PDF 恢复为式 1–31：以正文三处显式引用（式 6 = g^γ、式 16 = GAE 主公式、式 21 = 塑形折扣和）与伪代码两处引用（式 30 = 值函数 QP、式 31 = TRPO 更新）为锚，逐式与 PDF 核对；考订一处：HTML 版质心终止阈值印作「8.m / 2.m」系丢前导零伪影，PDF 确为 0.8 m（biped）/ 0.2 m（quadruped）；三图随裁剪落入 raw/assets（3dwalker / cartpole-grid / standup-circle，保留原名）
+- 新建 [[gae-paper]] 来源页：§1 两挑战与三贡献（公式先前已有、分析是新的）、§2 式 1–8 与 Def 1 / Prop 1（γ-just）、§3 式 9–19 推导与 γ/λ 不对称分工、§4 式 20–26 塑形与响应函数、§5 式 28–30 值函数置信域训练（+ 脚注 2：TD(λ) 式目标与 MC 无差别）、§6.1 算法与更新顺序陷阱、§6.2–6.3 三任务实验（中间值最优、5.8 天实时等效账）、附录 A 两 FAQ（compatible features 正交 / 为什么用 V 不用 Q）；嵌 Figure 1、Figure 4
+- 新建 [[gae]] 概念页（对照自查清单逐条过）：§2「score 零均值 → 任何 baseline 不偏差」机理（Prop 1 证明引擎）、§3 完整推导（式 14–18、20、25–26 均带 tag）、§4 γ/λ 对照表、§5 数值示例全本机复算——2 动作 MDP + 故意低估 20% 的 V：λ 扫描梯度占真值比例 0.800/0.818/0.931/1.000（λ=0 偏差恰等于 V 低估比例、λ=1 严格无偏）、正确 V 时任意 λ 精确（后续 δ≡0，即响应函数完全压缩）、指数加权 / 递缩相消 / r̃=δ 三恒等式验证、20 万次 MC 方差演示 var 0→0.064→0.678→1.068、§6 塑形视角（压缩响应时程 + γλ 截长延迟噪声）、§9 bandit 退化（RLHF 设定 GAE = 奖励 − V）与「用 V 不用 Q × GRPO 第三角」；嵌 Figure 2
+- 接线：[[ppo]]（§3.2 / §6 / 相关，GAE 从黑盒引用升级为页面链接，来源 1→2）、[[trpo]]（§7 优势估计 MC→GAE 升级线 + 相关，来源 1→2）、[[rlhf]]（§6 ppo 条补 gae）、[[ppo-paper]] / [[trpo-paper]] / [[instructgpt-paper]]（值得追踪补行）
+- 登记：overview（来源 10→11、当前状态四重→五重锚定、主线二 +「RL 引擎的优势信号源」、关键结论 +1、开放问题 +1、相关来源 +1）；index（新来源 / 概念行）

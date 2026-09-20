@@ -2,7 +2,7 @@
 type: concept
 title: RLHF（基于人类反馈的强化学习）
 created: 2026-09-15
-updated: 2026-09-16
+updated: 2026-09-20
 tags:
   - alignment
   - rlhf
@@ -97,7 +97,7 @@ $$\mathrm{objective}(\phi) = \mathbb{E}_{(x,\,y)\sim D_{\pi_\phi^{RL}}} \Big[r_\
 
 ## 6. 在本 wiki 的语境
 
-- [[ppo]]：第 3 阶段 RL 引擎的机制页——clip 替代目标四分支走查、截断 GAE、完整算法与消融实验（本页 §2「PPO 最大化 RM 打分」的展开）
+- [[ppo]]：第 3 阶段 RL 引擎的机制页——clip 替代目标四分支走查、截断 GAE、完整算法与消融实验（本页 §2「PPO 最大化 RM 打分」的展开）；其优势估计器 [[gae]] 的机制页（bandit 设定下退化为「奖励 − 值函数」，见 [[gae]] §9）
 - [[instructgpt]]：范式定标的模型实例（三档规模、配方速览）；本页主锚来源即其论文
 - [[dpo]]：本文 §2 管线的折叠（[[dpo-paper]]）；[[reward-model]]：第 2 阶段的产物，两轴分类法与 BT 损失
 - [[mixed-preference-optimization]] / [[grpo]] / [[rule-based-reward]]：谱系各分支的机制与实战

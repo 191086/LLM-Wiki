@@ -2,12 +2,12 @@
 type: concept
 title: PPO（近端策略优化）
 created: 2026-09-16
-updated: 2026-09-16
+updated: 2026-09-20
 tags:
   - reinforcement-learning
   - policy-gradient
   - rlhf
-sources: 1
+sources: 2
 ---
 
 # PPO（Proximal Policy Optimization，近端策略优化）
@@ -68,7 +68,7 @@ $L_t^{VF}$ 是值函数的平方误差 $(V_\theta(s_t) - V_t^{targ})^2$；$S$ �
 
 ### 3.2 优势估计：截断 GAE（式 10–12）
 
-PPO 按固定长度 $T$ 的轨迹段采样（$T$ 远小于整条回合），优势估计不能看超出 $T$ 的未来。用的是**截断版 GAE**（Generalized Advantage Estimation，广义优势估计——Schulman et al. 2015 提出的优势估计器，用 $\lambda$ 在「偏差」与「方差」间插值；[[ppo-paper]] 引 [Sch+15a]）。先定义 TD 残差（式 12）：
+PPO 按固定长度 $T$ 的轨迹段采样（$T$ 远小于整条回合），优势估计不能看超出 $T$ 的未来。用的是**截断版 GAE**（Generalized Advantage Estimation，广义优势估计——Schulman et al. 2015 提出的优势估计器，用 $\lambda$ 在「偏差」与「方差」间插值；推导、$\gamma/\lambda$ 分工与数值走查见 [[gae]]，原文 [[gae-paper]]；[[ppo-paper]] 引 [Sch+15a]）。先定义 TD 残差（式 12）：
 
 $$\delta_t = r_t + \gamma V(s_{t+1}) - V(s_t) \tag{式 12}$$
 
@@ -115,7 +115,7 @@ $$L^{KLPEN}(\theta) = \hat{\mathbb{E}}_t\big[r_t(\theta)\hat{A}_t - \beta\,\math
 - **多 epoch 复用是数据效率的来源，clip 是复用的保险**：vanilla PG 每批数据一次更新；PPO 同批 K=10 epochs——采样贵的环境（尤其 LLM 生成）里这是几十倍的样本成本差
 - **悲观下界 ≠ 约束参数距离**：$L^{CLIP}$ 相对**固定**的 $\theta_{old}$ 定义，约束的是替代目标的形状，不是 $\theta$ 与 $\theta_{old}$ 的参数距离——K epochs 内部 KL 仍可能爬升，Figure 2 展示的只是一次迭代后的插值。**[wiki 外一般性知识]** 此外 PPO 的实测性能对大量原论文未提的工程细节敏感（优势按 minibatch 归一化、值函数 clip、KL 早停等）；候选来源：Engstrom et al. 2020《Implementation Matters in Deep RL》（arXiv:2005.12729）、Huang et al. 2022《The 37 Implementation Details of PPO》（ICLR 2022 Blog Track）
 - **超参 $\epsilon$ 相当稳健**（0.1 / 0.2 / 0.3 全部 ≥0.70，[[ppo-paper]] Table 1），这本身是相对 TRPO（$\delta$ 难选）与固定 KL 惩罚（$\beta$ 难选）的工程优势
-- **advantage 估计的截断**：固定长度 T 采样 + 截断 GAE（§3.2）保证估计不看段外未来——代价是偏差，由 $\lambda$ 调节（$\lambda=1$ 退化为 Monte-Carlo 式有限时域回报）
+- **advantage 估计的截断**：固定长度 T 采样 + 截断 GAE（§3.2）保证估计不看段外未来——代价是偏差，由 $\lambda$ 调节（$\lambda=1$ 退化为 Monte-Carlo 式有限时域回报；$\gamma/\lambda$ 的不对称分工与数值演示见 [[gae]] §4–5）
 
 ## 7. 在本 wiki 的语境
 
@@ -131,4 +131,4 @@ $$L^{KLPEN}(\theta) = \hat{\mathbb{E}}_t\big[r_t(\theta)\hat{A}_t - \beta\,\math
 
 ## 相关
 
-- [[trpo]]（置信域前身：Theorem 1 下界 + KL 约束 + 共轭梯度）｜ [[rlhf]]（应用范式：第 3 阶段的 RL 引擎）｜ [[instructgpt]]（应用实例）｜ [[grpo]]（去 critic 变体）｜ [[dpo]]（免 RL 折叠路线）｜ [[reward-model]] ｜ [[rule-based-reward]]
+- [[trpo]]（置信域前身：Theorem 1 下界 + KL 约束 + 共轭梯度）｜ [[gae]]（优势估计器本尊：式 16 的推导与 γ/λ 语义）｜ [[rlhf]]（应用范式：第 3 阶段的 RL 引擎）｜ [[instructgpt]]（应用实例）｜ [[grpo]]（去 critic 变体）｜ [[dpo]]（免 RL 折叠路线）｜ [[reward-model]] ｜ [[rule-based-reward]]
